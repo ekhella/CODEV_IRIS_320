@@ -6,7 +6,7 @@ Video_Path = 'Data_confidential/video_arriere.mp4'
 class Video(object):
     def __init__(self):
         self.id = None
-        self.Frames, self.Frame_number, self.fps, self.frame_dimensions = self.video_treatment()
+        self.Frames, self.Frame_number, self.fps, self.frame_dimensions = self.video_treatment() #NOT CLEAN
 
 
     def video_treatment(self) -> list:
@@ -19,6 +19,7 @@ class Video(object):
         frames = []
         frame_id = 0
         total_frames = 2548 # NOT CLEAN
+        frame_decimation = 2
 
         w_speed, h_speed = 32, 22
         capture = cv2.VideoCapture(Video_Path)
@@ -37,7 +38,7 @@ class Video(object):
                 if success:
                     frames.append(Frame(id, np.array(frame)))
 
-                    if frame_id%2==0:
+                    if frame_id%frame_decimation==0:
                         interest_zone = frame[-h_speed:, :w_speed]
                         gray= cv2.cvtColor(interest_zone, cv2.COLOR_BGR2GRAY)
                         text= pytesseract.image_to_string(gray, config='--psm 6 digits')
@@ -63,12 +64,6 @@ class Video(object):
             print("\rThis code took {0} to excecute ".format(convert_ms_to_time_format((Tf-Ti)*1000)))
             return frames, frame_id, fps, frame_dimensions
     
-    def get_frame_time(frame_index, fps):
-        """
-        Returns time in ms"""
-        initial_time = 0 # TBD
-        time_in_ms = (frame_index / fps) * 1000
-        return time_in_ms
     
 
 class Frame(object):
@@ -84,3 +79,10 @@ def convert_ms_to_time_format(ms):
     minutes, ms = divmod(ms, 60000)
     seconds, ms = divmod(ms, 1000)
     return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}:{int(ms):03}"
+
+def get_frame_time(frame_index, fps):
+        """
+        Returns time in ms"""
+        initial_time = 0 # TBD
+        time_in_ms = (frame_index / fps) * 1000
+        return time_in_ms
