@@ -17,7 +17,7 @@ class Video(object):
         frame_id = 0
         total_frames = 2548 # NOT CLEAN
 
-        x_speed, y_speed, w_speed, h_speed = 0,0, 90, 50
+        w_speed, h_speed = 0,0, 90, 50
         capture = cv2.VideoCapture(Video_Path)
         file = open('speed.csv', 'w', newline='')
         writer= csv.writer(file)
@@ -48,7 +48,7 @@ class Video(object):
                     progress_text= "\rProgress: [{0}] {1:.2f}% ({2}/{3} frames)".format("#" * block + "-" * (bar_length - block), progress * 100, frame_id, total_frames)
                     sys.stdout.write(progress_text)
                     sys.stdout.flush()
-                    
+
                 else:
                     print(mess.P_getvid, end='')
                     break
