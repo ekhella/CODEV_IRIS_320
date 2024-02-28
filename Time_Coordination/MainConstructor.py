@@ -15,6 +15,7 @@ class Video(object):
         """
         frames = []
         frame_id = 0
+        total_frames = 2548 # NOT CLEAN
 
         x_speed, y_speed, w_speed, h_speed = 0,0, 90, 50
         capture = cv2.VideoCapture(Video_Path)
@@ -32,13 +33,22 @@ class Video(object):
                 success, frame = capture.read()
                 if success:
                     frames.append(Frame(id, np.array(frame)))
+
                     interest_zone = frame[-h_speed:, :w_speed]
                     gray= cv2.cvtColor(interest_zone, cv2.COLOR_BGR2GRAY)
                     text= pytesseract.image_to_string(gray, config='--psm 6 digits')
                     speed = ''.join(filter(str.isdigit,text))
                     writer.writerow([frame_id, speed])
+
                     frame_id += 1
-                    print(frame_id)
+
+                    progress = frame_id/total_frames
+                    bar_length = 50
+                    block= int(round(bar_length*progress))
+                    progress_text= "\rProgress: [{0}] {1:.2f}% ({2}/{3} frames)".format("#" * block + "-" * (bar_length - block), progress * 100, frame_id, total_frames)
+                    sys.stdout.write(progress_text)
+                    sys.stdout.flush()
+                    
                 else:
                     print(mess.P_getvid, end='')
                     break
