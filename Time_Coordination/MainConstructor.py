@@ -6,7 +6,7 @@ Video_Path = 'Data_confidential/video_arriere.mp4'
 class Video(object):
     def __init__(self):
         self.id = None
-        self.Frames, self.Frame_number, self.fps, self.frame_size = self.video_treatment()
+        self.Frames, self.Frame_number, self.fps, self.frame_dimensions = self.video_treatment()
 
 
     def video_treatment(self) -> list:
@@ -18,9 +18,10 @@ class Video(object):
         capture = cv2.VideoCapture(Video_Path)
         if not capture.isOpened():
                 print(mess.P_open, end='')
+                return None
         else:
             fps = capture.get(cv2.CAP_PROP_FPS)
-            frame_size=[int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)), int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))] # [WIDTH, HEIGH]
+            frame_dimensions=[int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)), int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))] # [WIDTH, HEIGH]
             while True:
                 success, frame = capture.read()
                 if success:
@@ -31,7 +32,7 @@ class Video(object):
                     break
             capture.release()
             cv2.destroyAllWindows()
-            return frames, frame_number, fps, frame_size
+            return frames, frame_number, fps, frame_dimensions
     
     def get_frame_time(frame_index, fps):
         """
@@ -50,7 +51,6 @@ class Video(object):
         return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}:{int(ms):03}"
 
 class Frame(object):
-     def __init__(self, array, id):
+     def __init__(self, id, array):
         self.id = id
         self.array = array
-        self.BWarray = None

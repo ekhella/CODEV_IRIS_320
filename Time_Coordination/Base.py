@@ -10,7 +10,7 @@ class Mess:
         self.B_proc = "\rInitialization of the procedure\n\n"
         self.E_proc = "\n\nProcedure finished"
         self.P_open = "\rError: Could not open video.\n\n"
-        self.P_getvid= "Reached the end of the video or error reading a frame."
+        self.P_getvid= "Reached the end of the video. \n\n"
         
 mess = Mess()
 

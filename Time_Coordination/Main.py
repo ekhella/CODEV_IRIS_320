@@ -11,7 +11,7 @@ def main():
     # You can access these attributes directly now
     print(f"Total Frames: {video.Frame_number}")
     print(f"FPS: {video.fps}")
-    print(f"Frame Size: {video.frame_size}")
+    print(f"Frame Size: {video.frame_dimensions}")
 
     # If you have additional methods in your Video class to process or display video frames, call them here
     # For example, video.display_frames() or any other method you've defined for processing
