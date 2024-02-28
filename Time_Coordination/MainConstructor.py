@@ -1,4 +1,4 @@
-from Modules import os,t, cv2, np
+from Modules import sys, cv2, np, csv, pytesseract
 from Base import mess
 
 Video_Path = 'Data_confidential/video_arriere.mp4'
@@ -14,8 +14,14 @@ class Video(object):
         Returns frames, frame_number, fps, frame_size
         """
         frames = []
-        frame_number = 0
+        frame_id = 0
+
+        x_speed, y_speed, w_speed, h_speed = 0,0, 90, 50
         capture = cv2.VideoCapture(Video_Path)
+        file = open('speed.csv', 'w', newline='')
+        writer= csv.writer(file)
+        writer.writerow(['Frame', 'Speed'])
+
         if not capture.isOpened():
                 print(mess.P_open, end='')
                 return None
@@ -25,14 +31,21 @@ class Video(object):
             while True:
                 success, frame = capture.read()
                 if success:
-                    frames.append(Frame(frame_number, np.array(frame)))
-                    frame_number += 1
+                    frames.append(Frame(id, np.array(frame)))
+                    interest_zone = frame[-h_speed:, :w_speed]
+                    gray= cv2.cvtColor(interest_zone, cv2.COLOR_BGR2GRAY)
+                    text= pytesseract.image_to_string(gray, config='--psm 6 digits')
+                    speed = ''.join(filter(str.isdigit,text))
+                    writer.writerow([frame_id, speed])
+                    frame_id += 1
+                    print(frame_id)
                 else:
                     print(mess.P_getvid, end='')
                     break
             capture.release()
             cv2.destroyAllWindows()
-            return frames, frame_number, fps, frame_dimensions
+            file.close()
+            return frames, frame_id, fps, frame_dimensions
     
     def get_frame_time(frame_index, fps):
         """
