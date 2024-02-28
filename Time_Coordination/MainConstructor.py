@@ -17,7 +17,7 @@ class Video(object):
         frame_id = 0
         total_frames = 2548 # NOT CLEAN
 
-        w_speed, h_speed = 0,0, 90, 50
+        w_speed, h_speed = 90, 50
         capture = cv2.VideoCapture(Video_Path)
         file = open('speed.csv', 'w', newline='')
         writer= csv.writer(file)
