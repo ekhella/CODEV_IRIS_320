@@ -1,4 +1,4 @@
-from Modules import sys, cv2, np, csv, pytesseract
+from Modules import sys, cv2, np, csv, pytesseract, t
 from Base import mess
 
 Video_Path = 'Data_confidential/video_arriere.mp4'
@@ -13,6 +13,9 @@ class Video(object):
         """
         Returns frames, frame_number, fps, frame_size
         """
+
+        Ti = t.time()
+
         frames = []
         frame_id = 0
         total_frames = 2548 # NOT CLEAN
@@ -55,6 +58,8 @@ class Video(object):
             capture.release()
             cv2.destroyAllWindows()
             file.close()
+            Tf =t.time()
+            print("\rThis code took :{0} to excecute ".format(Tf-Ti))
             return frames, frame_id, fps, frame_dimensions
     
     def get_frame_time(frame_index, fps):
