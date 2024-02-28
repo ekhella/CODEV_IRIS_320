@@ -20,7 +20,7 @@ class Video(object):
         frame_id = 0
         total_frames = 2548 # NOT CLEAN
 
-        w_speed, h_speed = 90, 50
+        w_speed, h_speed = 32, 22
         capture = cv2.VideoCapture(Video_Path)
         file = open('speed.csv', 'w', newline='')
         writer= csv.writer(file)
@@ -37,11 +37,12 @@ class Video(object):
                 if success:
                     frames.append(Frame(id, np.array(frame)))
 
-                    interest_zone = frame[-h_speed:, :w_speed]
-                    gray= cv2.cvtColor(interest_zone, cv2.COLOR_BGR2GRAY)
-                    text= pytesseract.image_to_string(gray, config='--psm 6 digits')
-                    speed = ''.join(filter(str.isdigit,text))
-                    writer.writerow([frame_id, speed])
+                    if frame_id%2==0:
+                        interest_zone = frame[-h_speed:, :w_speed]
+                        gray= cv2.cvtColor(interest_zone, cv2.COLOR_BGR2GRAY)
+                        text= pytesseract.image_to_string(gray, config='--psm 6 digits')
+                        speed = ''.join(filter(str.isdigit,text))
+                        writer.writerow([frame_id, speed])
 
                     frame_id += 1
 
@@ -59,7 +60,7 @@ class Video(object):
             cv2.destroyAllWindows()
             file.close()
             Tf =t.time()
-            print("\rThis code took :{0} to excecute ".format(Tf-Ti))
+            print("\rThis code took {0} to excecute ".format(convert_ms_to_time_format((Tf-Ti)*1000)))
             return frames, frame_id, fps, frame_dimensions
     
     def get_frame_time(frame_index, fps):
@@ -69,16 +70,17 @@ class Video(object):
         time_in_ms = (frame_index / fps) * 1000
         return time_in_ms
     
-    def convert_ms_to_time_format(ms):
-        """
-        Convert milliseconds to a time format (hours:minutes:seconds:milliseconds).
-        """
-        hours, ms = divmod(ms, 3600000)
-        minutes, ms = divmod(ms, 60000)
-        seconds, ms = divmod(ms, 1000)
-        return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}:{int(ms):03}"
 
 class Frame(object):
      def __init__(self, id, array):
         self.id = id
         self.array = array
+
+def convert_ms_to_time_format(ms):
+    """
+    Convert milliseconds to a time format (hours:minutes:seconds:milliseconds).
+    """
+    hours, ms = divmod(ms, 3600000)
+    minutes, ms = divmod(ms, 60000)
+    seconds, ms = divmod(ms, 1000)
+    return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}:{int(ms):03}"
