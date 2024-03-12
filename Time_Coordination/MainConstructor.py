@@ -3,6 +3,7 @@ from Base import mess
 from segmentation_settings import *
 from pytesseract_configs import *
 
+
 Video_Path = 'Data_confidential/video_arriere.mp4'
 
 class Video(object):
@@ -63,7 +64,7 @@ class Video(object):
             file.close()
             Tf =t.time()
             print("\rThis code took {0} to excecute ".format(convert_ms_to_time_format((Tf-Ti)*1000)))
-            
+
             return frames, frame_id, fps, frame_dimensions
     
     
