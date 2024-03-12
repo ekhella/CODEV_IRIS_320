@@ -1,5 +1,6 @@
 from Modules import sys, cv2, np, csv, pytesseract, t
 from Base import mess
+from segmentation_settings import *
 
 Video_Path = 'Data_confidential/video_arriere.mp4'
 
@@ -16,22 +17,18 @@ class Video(object):
 
         Ti = t.time()
 
-
-        w_speed, h_speed = 32, 22
-        w_time, h_time = 550, 15
-
         capture = cv2.VideoCapture(Video_Path)
         file = open('videotreatment.csv', 'w', newline='')
         writer= csv.writer(file)
-        writer.writerow(['Frame', 'Speed', ' Time'])
+        writer.writerow(['Frame', 'Speed', 'Time', 'Km marker'])
 
-        speed_config = '--psm 6 digits'
+        speed_config = '--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789'
         time_config = '--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789:'
-
+        km_config = '--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789+'
 
         frames = []
         frame_id = 0
-        frame_decimation = 10 # Analyse every frame of this video
+        frame_decimation = 100 # Analyse every frame of this video
         total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
 
         if not capture.isOpened():
@@ -56,7 +53,12 @@ class Video(object):
                         time_text = pytesseract.image_to_string(time_gray, config=time_config)
                         time = ''.join(str(time_text)).strip()
 
-                        writer.writerow([frame_id, speed, time])
+                        km_zone = frame[:h_km, w_km_s:w_km_e]
+                        km_gray = cv2.cvtColor(km_zone, cv2.COLOR_BGR2GRAY)
+                        km_text = pytesseract.image_to_string(km_gray, config=km_config)
+                        km = ''.join(str(km_text)).strip()
+
+                        writer.writerow([frame_id, speed, time, km])
 
                     frame_id += 1
 
