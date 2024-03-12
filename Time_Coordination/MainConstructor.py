@@ -16,16 +16,18 @@ class Video(object):
 
         Ti = t.time()
 
-        frames = []
-        frame_id = 0
-        total_frames = 2548 # NOT CLEAN
-        frame_decimation = 1
 
         w_speed, h_speed = 32, 22
         capture = cv2.VideoCapture(Video_Path)
         file = open('speed.csv', 'w', newline='')
         writer= csv.writer(file)
         writer.writerow(['Frame', 'Speed'])
+
+
+        frames = []
+        frame_id = 0
+        frame_decimation = 1 # Analyse every frame of this video
+        total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
 
         if not capture.isOpened():
                 print(mess.P_open, end='')
