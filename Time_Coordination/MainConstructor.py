@@ -54,7 +54,7 @@ class Video(object):
                         time_zone = frame[:h_time, w_time:]
                         time_gray = cv2.cvtColor(time_zone, cv2.COLOR_BGR2GRAY)
                         time_text = pytesseract.image_to_string(time_gray, config=time_config)
-                        time = ''.join(str(time_text))
+                        time = ''.join(str(time_text)).strip()
 
                         writer.writerow([frame_id, speed, time])
 
