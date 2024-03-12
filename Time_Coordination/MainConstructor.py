@@ -1,6 +1,7 @@
 from Modules import sys, cv2, np, csv, pytesseract, t
 from Base import mess
 from segmentation_settings import *
+from pytesseract_configs import *
 
 Video_Path = 'Data_confidential/video_arriere.mp4'
 
@@ -22,9 +23,6 @@ class Video(object):
         writer= csv.writer(file)
         writer.writerow(['Frame', 'Speed', 'Time', 'Km marker'])
 
-        speed_config = '--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789'
-        time_config = '--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789:'
-        km_config = '--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789+'
 
         frames = []
         frame_id = 0
