@@ -19,7 +19,7 @@ class Video(object):
         frames = []
         frame_id = 0
         total_frames = 2548 # NOT CLEAN
-        frame_decimation = 2
+        frame_decimation = 1
 
         w_speed, h_speed = 32, 22
         capture = cv2.VideoCapture(Video_Path)
