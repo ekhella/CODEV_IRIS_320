@@ -13,13 +13,13 @@ def convert_ms_to_time_format(ms):
     return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}:{int(ms):03}"
 
 
-def get_frame_time(frame_index, fps):
-        """
-        Returns time in ms
-        """
-        initial_time = 0 # TBD
-        time_in_ms = (frame_index / fps) * 1000
-        return time_in_ms
+def get_frame_time(frame_index, fps): #UNUSED YET
+    """
+    Returns time in ms
+    """
+    initial_time = 0 # TBD
+    time_in_ms = (frame_index / fps) * 1000
+    return time_in_ms
 
 def progress_bar():
     """
@@ -28,7 +28,8 @@ def progress_bar():
     progress = frame_id/total_frames
     bar_length = 50
     block= int(round(bar_length*progress))
-    progress_text= "\rProgress: [{0}] {1:.2f}% ({2}/{3} frames)".format("#" * block + "-" * (bar_length - block), progress * 100, frame_id, total_frames)
+    progress_text= "\rProgress: [{0}] {1:.2f}% ({2}/{3} frames)".format(
+        "#" * block + "-" * (bar_length - block), progress * 100, frame_id, total_frames)
     sys.stdout.write(progress_text)
     sys.stdout.flush()
 
@@ -56,7 +57,7 @@ def km_treatment():
     km_text = pytesseract.image_to_string(km_gray, config=km_config)
     km = ''.join(str(km_text)).strip()
 
-def preproccess(image):
+def preproccess(image): #UNUSED YET, DOESN'T WORK EFFICIENTLY
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, gaussian_kernel_size, 0) # Apply Gaussian blur to reduce noise
