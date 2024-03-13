@@ -3,73 +3,6 @@ from Base import mess
 from segmentation_settings import *
 from pytesseract_configs import *
 
-Video_Path = 'Data_confidential/video_arriere.mp4'
-
-class Video(object):
-    def __init__(self):
-        self.id = None
-        self.Frames, self.Frame_number, self.fps, self.frame_dimensions = self.video_treatment() #NOT CLEAN
-
-
-    def video_treatment(self) -> list:
-        """
-        Returns frames, frame_number, fps, frame_size
-        """
-        global frame_id
-        global total_frames
-        global frame
-
-        Ti = t.time()
-
-        capture = cv2.VideoCapture(Video_Path)
-        file = open('videotreatment.csv', 'w', newline='')
-        writer= csv.writer(file)
-        writer.writerow(['Frame', 'Speed', 'Time', 'Km marker'])
-
-        frames = []
-        frame_id = 0
-        frame_decimation = 100 # Analyse every 100 frame of this video
-        total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
-
-        if not capture.isOpened():
-                print(mess.P_open, end='')
-                return None
-        else:
-            fps = capture.get(cv2.CAP_PROP_FPS)
-            frame_dimensions=[int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)), int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))] # [WIDTH, HEIGH]
-
-            while True:
-                success, frame = capture.read()
-                if success:
-                    frames.append(Frame(id, np.array(frame)))
-
-                    if frame_id%frame_decimation==0:
-                        speed_treatment()
-                        time_treatment()
-                        km_treatment()
-
-                        writer.writerow([frame_id, speed, time, km])
-
-                    frame_id += 1
-                    progress_bar()
-
-                else:
-                    print(mess.P_getvid, end='')
-                    break
-
-            capture.release()
-            cv2.destroyAllWindows()
-            file.close()
-            Tf =t.time()
-            print("\rThis code took {0} to excecute ".format(convert_ms_to_time_format((Tf-Ti)*1000)))
-
-            return frames, frame_id, fps, frame_dimensions
-    
-class Frame(object):
-     def __init__(self, id, array):
-        self.id = id
-        self.array = array
-
 def convert_ms_to_time_format(ms):
     """
     Convert milliseconds to a time format (hours:minutes:seconds:milliseconds).
@@ -78,6 +11,7 @@ def convert_ms_to_time_format(ms):
     minutes, ms = divmod(ms, 60000)
     seconds, ms = divmod(ms, 1000)
     return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}:{int(ms):03}"
+
 
 def get_frame_time(frame_index, fps):
         """
@@ -134,3 +68,94 @@ def preproccess(image):
                                    adaptive_threshold_constant)     # Apply adaptive thresholding to binarize the image
 
     return thresh
+
+Video_Path = 'Data_confidential/video_arriere.mp4'
+
+class Video(object):
+    def __init__(self):
+        self.id = None
+        self.Frames, self.Frame_number, self.fps, self.frame_dimensions = self.video_treatment() #NOT CLEAN
+
+
+    def video_treatment(self) -> list:
+        """
+        Returns frames, frame_number, fps, frame_size
+        """
+        global frame_id
+        global total_frames
+        global frame
+
+        Ti = t.time()
+
+        capture = cv2.VideoCapture(Video_Path)
+        file = open('videotreatment.csv', 'w', newline='')
+        Tf = t.time()
+        T_opening= Tf-Ti
+        print("\rOpening the video took {0} to excecute ".format(convert_ms_to_time_format((T_opening)*1000)))
+        writer= csv.writer(file)
+        writer.writerow(['Frame', 'Speed', 'Time', 'Km marker'])
+
+        frames = []
+        frame_id = 0
+        frame_decimation = 10 # Analyse every 100 frame of this video
+        total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
+
+        if not capture.isOpened():
+                print(mess.P_open, end='')
+                return None
+        else:
+            T1=t.time()
+            fps = capture.get(cv2.CAP_PROP_FPS)
+            frame_dimensions=[int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)), int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))] # [WIDTH, HEIGH]
+            Tf = t.time()
+            T_fps=Tf-T1
+            print("\rGetting the FPS/dimensions took {0} to excecute ".format(convert_ms_to_time_format((T_fps)*1000)))
+            T_speed, T_time, T_km, T_write = 0,0,0,0
+            while True:
+                success, frame = capture.read()
+                if success:
+                    frames.append(Frame(id, np.array(frame)))
+
+                    if frame_id%frame_decimation==0:
+                        T1=t.time()
+                        speed_treatment()
+                        T2=t.time()
+                        T_speed+=T2-T1
+
+                        time_treatment()
+                        T3=t.time()
+                        T_time+= T3-T2
+
+                        km_treatment()
+                        T4=t.time()
+                        T_km+= T4-T3
+
+                        writer.writerow([frame_id, speed, time, km])
+                        T5=t.time()
+                        T_write+= T5-T4
+
+                    frame_id += 1
+                    progress_bar()
+                else:
+                    print(mess.P_getvid, end='')
+                    break
+            print("\rSpeed treatment took {0} to excecute ".format(convert_ms_to_time_format((T_speed)*1000))) 
+            print("\rTime treatment took {0} to excecute ".format(convert_ms_to_time_format((T_time)*1000))) 
+            print("\rKm treatment took {0} to excecute ".format(convert_ms_to_time_format((T_km)*1000))) 
+            print("\rWriting on the CSV took {0} to excecute ".format(convert_ms_to_time_format((T_write)*1000))) 
+
+            capture.release()
+            cv2.destroyAllWindows()
+            file.close()
+            Tf =t.time()
+            T_treatment= Tf-Ti
+            print("\rThis code took {0} to excecute ".format(convert_ms_to_time_format((T_treatment)*1000)))
+            print("Review :\n Opening : {0}% \n Gettings FPS : {1}% \n Speed Treatment : {2}% \n Time Treatment : {3}% \n Km Treatment : {4}% \n Writing : {5} %".format(
+                T_opening/T_treatment, T_fps/T_treatment, T_speed/T_treatment, T_time/T_treatment, T_km/T_treatment, T_write/T_treatment))
+
+            return frames, frame_id, fps, frame_dimensions
+    
+class Frame(object):
+     def __init__(self, id, array):
+        self.id = id
+        self.array = array
