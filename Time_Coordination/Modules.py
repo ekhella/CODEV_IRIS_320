@@ -5,3 +5,4 @@ import csv
 import sys
 import numpy as np
 import time as t
+from PIL import Image

@@ -3,7 +3,6 @@ from Base import mess
 from segmentation_settings import *
 from pytesseract_configs import *
 
-
 Video_Path = 'Data_confidential/video_arriere.mp4'
 
 class Video(object):
@@ -26,7 +25,6 @@ class Video(object):
         file = open('videotreatment.csv', 'w', newline='')
         writer= csv.writer(file)
         writer.writerow(['Frame', 'Speed', 'Time', 'Km marker'])
-
 
         frames = []
         frame_id = 0
@@ -67,8 +65,6 @@ class Video(object):
 
             return frames, frame_id, fps, frame_dimensions
     
-    
-
 class Frame(object):
      def __init__(self, id, array):
         self.id = id
@@ -125,3 +121,16 @@ def km_treatment():
     km_gray = cv2.cvtColor(km_zone, cv2.COLOR_BGR2GRAY)
     km_text = pytesseract.image_to_string(km_gray, config=km_config)
     km = ''.join(str(km_text)).strip()
+
+def preproccess(image):
+
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.GaussianBlur(gray, gaussian_kernel_size, 0) # Apply Gaussian blur to reduce noise
+    thresh = cv2.adaptiveThreshold(blurred, 
+                                   max_intensity, 
+                                   cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                   cv2.THRESH_BINARY_INV, 
+                                   adaptive_threshold_block_size, 
+                                   adaptive_threshold_constant)     # Apply adaptive thresholding to binarize the image
+
+    return thresh
