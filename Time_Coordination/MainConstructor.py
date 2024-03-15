@@ -26,7 +26,6 @@ def progress_bar():
     Prints the progress bar of the video treatment
     """
     progress = frame_id/total_frames
-    bar_length = 50
     block= int(round(bar_length*progress))
     progress_text= "\rProgress: [{0}] {1:.2f}% ({2}/{3} frames)".format(
         "#" * block + "-" * (bar_length - block), progress * 100, frame_id, total_frames)
@@ -95,10 +94,8 @@ class Video(object):
         print("\rOpening the video took {0} to excecute ".format(convert_ms_to_time_format((T_opening)*1000)))
         writer= csv.writer(file)
         writer.writerow(['Frame', 'Speed', 'Time', 'Km marker'])
-
         frames = []
         frame_id = 0
-        frame_decimation = 100 # Analyse every 100 frame of this video
         total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
 
         if not capture.isOpened():
