@@ -1,4 +1,4 @@
-from Modules import sys, cv2, np, csv, pytesseract, t
+from Modules import sys, cv2, np, csv, pytesseract, t, plt
 from Base import mess
 from segmentation_settings import *
 from pytesseract_configs import *
@@ -98,7 +98,7 @@ class Video(object):
 
         frames = []
         frame_id = 0
-        frame_decimation = 10 # Analyse every 100 frame of this video
+        frame_decimation = 100 # Analyse every 100 frame of this video
         total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
 
         if not capture.isOpened():
@@ -150,10 +150,16 @@ class Video(object):
             file.close()
             Tf =t.time()
             T_treatment= Tf-Ti
+            T_others = T_treatment - (T_opening + T_fps + T_speed + T_time + T_km + T_write)
             print("\rThis code took {0} to excecute ".format(convert_ms_to_time_format((T_treatment)*1000)))
-            print("Review :\n Opening : {0}% \n Gettings FPS : {1}% \n Speed Treatment : {2}% \n Time Treatment : {3}% \n Km Treatment : {4}% \n Writing : {5} %".format(
-                T_opening/T_treatment, T_fps/T_treatment, T_speed/T_treatment, T_time/T_treatment, T_km/T_treatment, T_write/T_treatment))
-
+            labels = ["Opening :","Getting FPS :","Speed Treatment :","Time Treatment :", "Km Treatment :","CSV Writing : ", "Others"]
+            values =[T_opening/T_treatment, T_fps/T_treatment, T_speed/T_treatment, T_time/T_treatment, T_km/T_treatment, T_write/T_treatment, T_others/T_treatment]
+            print("Review :\n" +"\n".join(["{0} {1:%}".format(label, value) for label, value in zip(labels, values)]))
+            fig, ax = plt.subplots()
+            ax.pie(values, explode= explode, labels=None, startangle=90, labeldistance= 1.2)
+            plt.legend(labels,loc= "best")
+            plt.axis('equal')
+            plt.show()
             return frames, frame_id, fps, frame_dimensions
     
 class Frame(object):
