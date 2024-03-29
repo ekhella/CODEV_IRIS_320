@@ -5,7 +5,6 @@ from segmentation_settings import bar_length, frame_decimation, w_speed, h_speed
 from pytesseract_configs import speed_config, km_config, time_config
 from FrameConstructor import Frame
 
-Video_Path = 'Data_confidential/video_arriere.mp4'
 
 def convert_ms_to_time_format(ms):
     """
@@ -36,10 +35,15 @@ def progress_bar(frame_id, total_frames):
     sys.stdout.write(progress_text)
     sys.stdout.flush()
 
-class Video(object):
-    def __init__(self):
+class VideoProcessor :
+    def __init__(self, video_path):
         self.id = None
-        self.Frames, self.Frame_number, self.fps, self.frame_dimensions = self.video_treatment() #NOT CLEAN
+        self.video_path = video_path
+        self.frame_id = 0
+        self.total_frames = 0
+        self.frames = []
+        self.fps= 0
+        self.frame_dimensions = [0,0]
     
     def get_attribute(self, zone, spec_config):
         zone_gray= cv2.cvtColor(zone, cv2.COLOR_BGR2GRAY)
@@ -47,30 +51,28 @@ class Video(object):
         return ''.join(filter(str.isdigit,zone_text))
 
 
-    def video_treatment(self) -> list:
+    def process_video(self) -> list:
         """
         Returns frames, frame_number, fps, frame_size
         """
         Ti = t.time()
 
-        capture = cv2.VideoCapture(Video_Path)
+        capture = cv2.VideoCapture(self.video_path)
         file = open('videotreatment.csv', 'w', newline='')
         Tf = t.time()
         T_opening= Tf-Ti
         print("\rOpening the video took {0} to excecute ".format(convert_ms_to_time_format((T_opening)*1000)))
         writer= csv.writer(file)
         writer.writerow(['Frame', 'Speed', 'Time', 'Km marker'])
-        frames = []
-        frame_id = 0
-        total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT)) 
+        self.total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT)) 
 
         if not capture.isOpened():
                 print(mess.P_open, end='')
                 return None
         else:
             T1=t.time()
-            fps = capture.get(cv2.CAP_PROP_FPS)
-            frame_dimensions=[int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)), int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))] # [WIDTH, HEIGH]
+            self.fps = capture.get(cv2.CAP_PROP_FPS)
+            self.frame_dimensions=[int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)), int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))] # [WIDTH, HEIGH]
             Tf = t.time()
             T_fps=Tf-T1
             print("\rGetting the FPS/dimensions took {0} to excecute ".format(convert_ms_to_time_format((T_fps)*1000)))
@@ -82,9 +84,9 @@ class Video(object):
                     time_zone = frame[:h_time, w_time:]
                     km_zone = frame[:h_km, w_km_s:w_km_e]  
 
-                    frames.append(Frame(id, np.array(frame)))
+                    self.frames.append(Frame(id, np.array(frame)))
 
-                    if frame_id%frame_decimation==0:
+                    if self.frame_id%frame_decimation==0:
                         T1=t.time()
                         speed = self.get_attribute(speed_zone, speed_config)
                         T2=t.time()
@@ -98,12 +100,12 @@ class Video(object):
                         T4=t.time()
                         T_km+= T4-T3
 
-                        writer.writerow([frame_id, speed, time, km])
+                        writer.writerow([self.frame_id, speed, time, km])
                         T5=t.time()
                         T_write+= T5-T4
 
-                    frame_id += 1
-                    progress_bar(frame_id, total_frames)
+                    self.frame_id += 1
+                    progress_bar(self.frame_id, self.total_frames)
                 else:
                     print(mess.P_getvid, end='')
                     break
@@ -129,6 +131,6 @@ class Video(object):
             plt.legend(labels,loc= "best")
             plt.axis('equal')
             plt.show()
-            return frames, frame_id, fps, frame_dimensions
+
     
 
