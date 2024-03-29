@@ -24,14 +24,25 @@ def get_frame_time(frame_index, fps): #UNUSED YET
     time_in_ms = (frame_index / fps) * 1000
     return initial_time+time_in_ms
 
-def progress_bar(frame_id, total_frames):
+def progress_bar(start_time, frame_id, total_frames):
     """
-    Prints the progress bar of the video treatment
+    Prints the progress bar of the video treatment with estimated time left.
     """
-    progress = frame_id/total_frames
-    block= int(round(bar_length*progress))
-    progress_text= "\rProgress: [{0}] {1:.2f}% ({2}/{3} frames)".format(
-        "#" * block + "-" * (bar_length - block), progress * 100, frame_id, total_frames)
+    current_time = t.time()
+    elapsed_time = current_time - start_time
+    progress = frame_id / total_frames
+
+    if frame_id > 0:
+        estimated_total_time = elapsed_time / progress
+        estimated_time_left = estimated_total_time - elapsed_time
+        time_left_formatted = convert_ms_to_time_format(estimated_time_left * 1000)  # Convert seconds to ms
+    else:
+        time_left_formatted = "Calculating..."
+
+    block = int(round(bar_length * progress))
+    progress_text = "\rProgress: [{0}] {1:.2f}% ({2}/{3} frames). Estimated Time Left: {4}".format(
+        "#" * block + "-" * (bar_length - block), progress * 100, frame_id, total_frames, time_left_formatted
+    )
     sys.stdout.write(progress_text)
     sys.stdout.flush()
 
@@ -55,12 +66,12 @@ class VideoProcessor :
         """
         Returns frames, frame_number, fps, frame_size
         """
-        Ti = t.time()
+        start_time = t.time()
 
         capture = cv2.VideoCapture(self.video_path)
         file = open('videotreatment.csv', 'w', newline='')
         Tf = t.time()
-        T_opening= Tf-Ti
+        T_opening= Tf-start_time
         print("\rOpening the video took {0} to excecute ".format(convert_ms_to_time_format((T_opening)*1000)))
         writer= csv.writer(file)
         writer.writerow(['Frame', 'Speed', 'Time', 'Km marker'])
@@ -105,7 +116,7 @@ class VideoProcessor :
                         T_write+= T5-T4
 
                     self.frame_id += 1
-                    progress_bar(self.frame_id, self.total_frames)
+                    progress_bar(start_time, self.frame_id, self.total_frames)
                 else:
                     print(mess.P_getvid, end='')
                     break
@@ -118,9 +129,9 @@ class VideoProcessor :
             capture.release()
             cv2.destroyAllWindows()
             file.close()
-            Tf =t.time()
-            T_closing =Tf- T6
-            T_treatment= Tf-Ti
+            end_time =t.time()
+            T_closing =end_time- T6
+            T_treatment= end_time-start_time
             T_others = T_treatment - (T_opening + T_fps + T_speed + T_time + T_km + T_write + T_closing)
             print("\rThis code took {0} to excecute ".format(convert_ms_to_time_format((T_treatment)*1000)))
             labels = ["Opening :","Getting FPS :","Speed Treatment :","Time Treatment :", "Km Treatment :","CSV Writing : ", "Closing :", "Others"]
