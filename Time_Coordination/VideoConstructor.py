@@ -25,7 +25,7 @@ def get_frame_time(frame_index, fps): #UNUSED YET
     time_in_ms = (frame_index / fps) * 1000
     return initial_time+time_in_ms
 
-def progress_bar():
+def progress_bar(frame_id, total_frames):
     """
     Prints the progress bar of the video treatment
     """
@@ -36,44 +36,21 @@ def progress_bar():
     sys.stdout.write(progress_text)
     sys.stdout.flush()
 
-def get_speed():
-    global speed
-
-    speed_zone = frame[-h_speed:, :w_speed]
-    speed_gray= cv2.cvtColor(speed_zone, cv2.COLOR_BGR2GRAY)
-    speed_text= pytesseract.image_to_string(speed_gray, config=speed_config)
-    speed = ''.join(filter(str.isdigit,speed_text))
-
-def get_time():
-    global time
-
-    time_zone = frame[:h_time, w_time:]
-    time_gray = cv2.cvtColor(time_zone, cv2.COLOR_BGR2GRAY)
-    time_text = pytesseract.image_to_string(time_gray, config=time_config)
-    time = ''.join(str(time_text)).strip()
-
-def get_km():
-    global km
-
-    km_zone = frame[:h_km, w_km_s:w_km_e]
-    km_gray = cv2.cvtColor(km_zone, cv2.COLOR_BGR2GRAY)
-    km_text = pytesseract.image_to_string(km_gray, config=km_config)
-    km = ''.join(str(km_text)).strip()
-
 class Video(object):
     def __init__(self):
         self.id = None
         self.Frames, self.Frame_number, self.fps, self.frame_dimensions = self.video_treatment() #NOT CLEAN
+    
+    def get_attribute(self, zone, spec_config):
+        zone_gray= cv2.cvtColor(zone, cv2.COLOR_BGR2GRAY)
+        zone_text= pytesseract.image_to_string(zone_gray, config=spec_config)
+        return ''.join(filter(str.isdigit,zone_text))
 
 
     def video_treatment(self) -> list:
         """
         Returns frames, frame_number, fps, frame_size
         """
-        global frame_id
-        global total_frames
-        global frame
-
         Ti = t.time()
 
         capture = cv2.VideoCapture(Video_Path)
@@ -85,7 +62,7 @@ class Video(object):
         writer.writerow(['Frame', 'Speed', 'Time', 'Km marker'])
         frames = []
         frame_id = 0
-        total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT)) 
 
         if not capture.isOpened():
                 print(mess.P_open, end='')
@@ -101,19 +78,23 @@ class Video(object):
             while True:
                 success, frame = capture.read()
                 if success:
+                    speed_zone = frame[-h_speed:, :w_speed]
+                    time_zone = frame[:h_time, w_time:]
+                    km_zone = frame[:h_km, w_km_s:w_km_e]  
+
                     frames.append(Frame(id, np.array(frame)))
 
                     if frame_id%frame_decimation==0:
                         T1=t.time()
-                        get_speed()
+                        speed = self.get_attribute(speed_zone, speed_config)
                         T2=t.time()
                         T_speed+=T2-T1
 
-                        get_time()
+                        time = self.get_attribute(time_zone, time_config)
                         T3=t.time()
                         T_time+= T3-T2
 
-                        get_km()
+                        km = self.get_attribute(km_zone, km_config)
                         T4=t.time()
                         T_km+= T4-T3
 
@@ -122,7 +103,7 @@ class Video(object):
                         T_write+= T5-T4
 
                     frame_id += 1
-                    progress_bar()
+                    progress_bar(frame_id, total_frames)
                 else:
                     print(mess.P_getvid, end='')
                     break
@@ -131,15 +112,17 @@ class Video(object):
             print("\rKm treatment took {0} to excecute ".format(convert_ms_to_time_format((T_km)*1000))) 
             print("\rWriting on the CSV took {0} to excecute ".format(convert_ms_to_time_format((T_write)*1000))) 
 
+            T6 = t.time()
             capture.release()
             cv2.destroyAllWindows()
             file.close()
             Tf =t.time()
+            T_closing =Tf- T6
             T_treatment= Tf-Ti
-            T_others = T_treatment - (T_opening + T_fps + T_speed + T_time + T_km + T_write)
+            T_others = T_treatment - (T_opening + T_fps + T_speed + T_time + T_km + T_write + T_closing)
             print("\rThis code took {0} to excecute ".format(convert_ms_to_time_format((T_treatment)*1000)))
-            labels = ["Opening :","Getting FPS :","Speed Treatment :","Time Treatment :", "Km Treatment :","CSV Writing : ", "Others"]
-            values =[T_opening/T_treatment, T_fps/T_treatment, T_speed/T_treatment, T_time/T_treatment, T_km/T_treatment, T_write/T_treatment, T_others/T_treatment]
+            labels = ["Opening :","Getting FPS :","Speed Treatment :","Time Treatment :", "Km Treatment :","CSV Writing : ", "Closing :", "Others"]
+            values =[T_opening/T_treatment, T_fps/T_treatment, T_speed/T_treatment, T_time/T_treatment, T_km/T_treatment, T_write/T_treatment, T_closing, T_others/T_treatment]
             print("Review :\n" +"\n".join(["{0} {1:%}".format(label, value) for label, value in zip(labels, values)]))
             fig, ax = plt.subplots()
             ax.pie(values, explode= explode, labels=None, startangle=90, labeldistance= 1.2)
