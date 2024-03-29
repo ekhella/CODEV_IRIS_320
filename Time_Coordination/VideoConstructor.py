@@ -95,7 +95,7 @@ class VideoProcessor :
                     time_zone = frame[:h_time, w_time:]
                     km_zone = frame[:h_km, w_km_s:w_km_e]  
 
-                    self.frames.append(Frame(id, np.array(frame)))
+                    self.frames.append(Frame(id, np.array(frame))) # For now, the Frame Class is Useless
 
                     if self.frame_id%frame_decimation==0:
                         T1=t.time()

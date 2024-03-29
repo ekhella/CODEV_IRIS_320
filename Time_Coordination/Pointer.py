@@ -1,10 +1,10 @@
 #Imports
 from Modules import cv2
-Video_Path = 'Data_confidential/video_arriere.mp4'
+Video_Path = 'Data_confidential/video_vision_perif.mp4'
 
 capture = cv2.VideoCapture(Video_Path) 
 
-def mouse_callback(event, x, y):
+def mouse_callback(event, x, y, flags, param):
     """
     Returns tehe position of the Mouse Click relative to the image opened
     """
