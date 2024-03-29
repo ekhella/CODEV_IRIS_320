@@ -1,11 +1,15 @@
+#Imports
 from Modules import cv2
+Video_Path = 'Data_confidential/video_arriere.mp4'
 
-def mouse_callback(event, x, y, flags, param):
+capture = cv2.VideoCapture(Video_Path) 
+
+def mouse_callback(event, x, y):
+    """
+    Returns tehe position of the Mouse Click relative to the image opened
+    """
     if event == cv2.EVENT_LBUTTONDOWN:  
         print(f"Position: (x={x}, y={y})") 
-
-
-capture = cv2.VideoCapture('Data_confidential/video_arriere.mp4') 
 
 if not capture.isOpened():
     print("Error: Could not open video.")

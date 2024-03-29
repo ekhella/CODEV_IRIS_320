@@ -1,7 +1,10 @@
+# Imports
 from Modules import sys, cv2, np, csv, pytesseract, t, plt
 from Base import mess
-from segmentation_settings import *
-from pytesseract_configs import *
+from segmentation_settings import bar_length, frame_decimation, w_speed, h_speed, w_time, w_km_e, w_km_s, h_km, h_time, explode
+from pytesseract_configs import speed_config, km_config, time_config
+
+Video_Path = 'Data_confidential/video_arriere.mp4'
 
 def convert_ms_to_time_format(ms):
     """
@@ -19,7 +22,7 @@ def get_frame_time(frame_index, fps): #UNUSED YET
     """
     initial_time = 0 # TBD
     time_in_ms = (frame_index / fps) * 1000
-    return time_in_ms
+    return initial_time+time_in_ms
 
 def progress_bar():
     """
@@ -32,7 +35,7 @@ def progress_bar():
     sys.stdout.write(progress_text)
     sys.stdout.flush()
 
-def speed_treatment():
+def get_speed():
     global speed
 
     speed_zone = frame[-h_speed:, :w_speed]
@@ -40,7 +43,7 @@ def speed_treatment():
     speed_text= pytesseract.image_to_string(speed_gray, config=speed_config)
     speed = ''.join(filter(str.isdigit,speed_text))
 
-def time_treatment():
+def get_time():
     global time
 
     time_zone = frame[:h_time, w_time:]
@@ -48,28 +51,13 @@ def time_treatment():
     time_text = pytesseract.image_to_string(time_gray, config=time_config)
     time = ''.join(str(time_text)).strip()
 
-def km_treatment():
+def get_km():
     global km
 
     km_zone = frame[:h_km, w_km_s:w_km_e]
     km_gray = cv2.cvtColor(km_zone, cv2.COLOR_BGR2GRAY)
     km_text = pytesseract.image_to_string(km_gray, config=km_config)
     km = ''.join(str(km_text)).strip()
-
-def preproccess(image): #UNUSED YET, DOESN'T WORK EFFICIENTLY
-
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, gaussian_kernel_size, 0) # Apply Gaussian blur to reduce noise
-    thresh = cv2.adaptiveThreshold(blurred, 
-                                   max_intensity, 
-                                   cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
-                                   cv2.THRESH_BINARY_INV, 
-                                   adaptive_threshold_block_size, 
-                                   adaptive_threshold_constant)     # Apply adaptive thresholding to binarize the image
-
-    return thresh
-
-Video_Path = 'Data_confidential/video_arriere.mp4'
 
 class Video(object):
     def __init__(self):
@@ -116,15 +104,15 @@ class Video(object):
 
                     if frame_id%frame_decimation==0:
                         T1=t.time()
-                        speed_treatment()
+                        get_speed()
                         T2=t.time()
                         T_speed+=T2-T1
 
-                        time_treatment()
+                        get_time()
                         T3=t.time()
                         T_time+= T3-T2
 
-                        km_treatment()
+                        get_km()
                         T4=t.time()
                         T_km+= T4-T3
 
