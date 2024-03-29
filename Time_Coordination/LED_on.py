@@ -15,7 +15,7 @@ def is_led_on(frame, hsv_thresholds):
     return cv2.countNonZero(mask) > 0
 
 # HSV thresholds for red LED
-hsv_thresholds = ((0, 74, 74), (15, 255, 255)), ((160, 79, 79), (180, 255, 255))  # Red HSV thresholds
+hsv_thresholds = ((0, 90, 90), (15, 255, 255)), ((160, 110, 110), (180, 255, 255))  # Red HSV thresholds
 
 
 video_path = 'Data_confidential/video_vision_perif.mp4'
