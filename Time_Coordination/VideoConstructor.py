@@ -3,6 +3,7 @@ from Modules import sys, cv2, np, csv, pytesseract, t, plt
 from Base import mess
 from segmentation_settings import bar_length, frame_decimation, w_speed, h_speed, w_time, w_km_e, w_km_s, h_km, h_time, explode
 from pytesseract_configs import speed_config, km_config, time_config
+from FrameConstructor import Frame
 
 Video_Path = 'Data_confidential/video_arriere.mp4'
 
@@ -147,7 +148,4 @@ class Video(object):
             plt.show()
             return frames, frame_id, fps, frame_dimensions
     
-class Frame(object):
-     def __init__(self, id, array):
-        self.id = id
-        self.array = array
+

@@ -1,5 +1,5 @@
 from Modules import t, os
-from MainConstructor import Video
+from VideoConstructor import Video
 
 
 def main():
