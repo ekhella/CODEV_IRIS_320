@@ -98,22 +98,22 @@ class VideoProcessor :
                     self.frames.append(Frame(id, np.array(frame))) # For now, the Frame Class is Useless
 
                     if self.frame_id%frame_decimation==0:
-                        T1=t.time()
+                        T_start_speed=t.time()
                         speed = self.get_attribute(speed_zone, speed_config)
-                        T2=t.time()
-                        T_speed+=T2-T1
+                        T_end_speed=t.time()
+                        T_speed+=T_start_speed-T_end_speed
 
                         time = self.get_attribute(time_zone, time_config)
-                        T3=t.time()
-                        T_time+= T3-T2
+                        T_end_time=t.time()
+                        T_time+= T_end_time-T_end_speed
 
                         km = self.get_attribute(km_zone, km_config)
-                        T4=t.time()
-                        T_km+= T4-T3
+                        T_end_km=t.time()
+                        T_km+= T_end_km-T_end_time
 
                         writer.writerow([self.frame_id, speed, time, km])
-                        T5=t.time()
-                        T_write+= T5-T4
+                        T_end_write=t.time()
+                        T_write+= T_end_write-T_end_km
 
                     self.frame_id += 1
                     progress_bar(start_time, self.frame_id, self.total_frames)
@@ -125,13 +125,13 @@ class VideoProcessor :
             print("\rKm treatment took {0} to excecute ".format(convert_ms_to_time_format((T_km)*1000))) 
             print("\rWriting on the CSV took {0} to excecute ".format(convert_ms_to_time_format((T_write)*1000))) 
 
-            T6 = t.time()
+            T_start_closing = t.time()
             capture.release()
             cv2.destroyAllWindows()
             file.close()
-            end_time =t.time()
-            T_closing =end_time- T6
-            T_treatment= end_time-start_time
+            T_end_all =t.time()
+            T_closing =T_end_all- T_start_closing
+            T_treatment= T_end_all-start_time
             T_others = T_treatment - (T_opening + T_fps + T_speed + T_time + T_km + T_write + T_closing)
             print("\rThis code took {0} to excecute ".format(convert_ms_to_time_format((T_treatment)*1000)))
             labels = ["Opening :","Getting FPS :","Speed Treatment :","Time Treatment :", "Km Treatment :","CSV Writing : ", "Closing :", "Others"]
