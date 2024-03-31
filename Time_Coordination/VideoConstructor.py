@@ -15,15 +15,6 @@ def convert_ms_to_time_format(ms):
     seconds, ms = divmod(ms, 1000)
     return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}:{int(ms):03}"
 
-
-def get_frame_time(frame_index, fps): #UNUSED YET
-    """
-    Returns time in ms
-    """
-    initial_time = 0 # TBD
-    time_in_ms = (frame_index / fps) * 1000
-    return initial_time+time_in_ms
-
 def progress_bar(start_time, frame_id, total_frames):
     """
     Prints the progress bar of the video treatment with estimated time left.
@@ -66,12 +57,12 @@ class VideoProcessor :
         """
         Returns frames, frame_number, fps, frame_size
         """
-        start_time = t.time()
+        T_start_time = t.time()
 
         capture = cv2.VideoCapture(self.video_path)
         file = open('videotreatment.csv', 'w', newline='')
-        Tf = t.time()
-        T_opening= Tf-start_time
+        T_end_opening = t.time()
+        T_opening= T_end_opening-T_start_time
         print("\rOpening the video took {0} to excecute ".format(convert_ms_to_time_format((T_opening)*1000)))
         writer= csv.writer(file)
         writer.writerow(['Frame', 'Speed', 'Time', 'Km marker'])
@@ -101,7 +92,7 @@ class VideoProcessor :
                         T_start_speed=t.time()
                         speed = self.get_attribute(speed_zone, speed_config)
                         T_end_speed=t.time()
-                        T_speed+=T_start_speed-T_end_speed
+                        T_speed+=T_end_speed - T_start_speed
 
                         time = self.get_attribute(time_zone, time_config)
                         T_end_time=t.time()
@@ -116,7 +107,7 @@ class VideoProcessor :
                         T_write+= T_end_write-T_end_km
 
                     self.frame_id += 1
-                    progress_bar(start_time, self.frame_id, self.total_frames)
+                    progress_bar(T_start_time, self.frame_id, self.total_frames)
                 else:
                     print(mess.P_getvid, end='')
                     break
@@ -131,7 +122,7 @@ class VideoProcessor :
             file.close()
             T_end_all =t.time()
             T_closing =T_end_all- T_start_closing
-            T_treatment= T_end_all-start_time
+            T_treatment= T_end_all-T_start_time
             T_others = T_treatment - (T_opening + T_fps + T_speed + T_time + T_km + T_write + T_closing)
             print("\rThis code took {0} to excecute ".format(convert_ms_to_time_format((T_treatment)*1000)))
             labels = ["Opening :","Getting FPS :","Speed Treatment :","Time Treatment :", "Km Treatment :","CSV Writing : ", "Closing :", "Others"]

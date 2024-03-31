@@ -11,6 +11,11 @@ class Mess:
         self.E_proc = "\n\nProcedure finished"
         self.P_open = "\rError: Could not open video.\n\n"
         self.P_getvid= "\n\nReached the end of the video. \n\n"
+        self.B_vi0 = "\rPlace the video in the Temporary Directory 'tempdir' on your Desktop."
+        self.P_vi1 = "\rPlease, paste a video in the accepted format (mp4, mov, avi)"
+        self.P_vi2 = "\rPlease, only paste one video"
+        self.B_gfs = "\rGetting the video ..."
+        self.E_gfs = "\rGot it ! ------------------------------------------ OK\n\n"
         
 mess = Mess()
 
