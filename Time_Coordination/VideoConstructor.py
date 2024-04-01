@@ -133,6 +133,3 @@ class VideoProcessor :
             plt.legend(labels,loc= "best")
             plt.axis('equal')
             plt.show()
-
-    
-
