@@ -1,7 +1,7 @@
 from Modules import os, t, sht, gp
 from Base import mess
 
-# définition des paths utiles
+
 class Paths(object):
     def __init__(self):
         self.pathList = ['desktop', 'tempdir', 'videoStorage']
