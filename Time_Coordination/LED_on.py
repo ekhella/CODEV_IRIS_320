@@ -41,6 +41,13 @@ else:
 
     cap.release()
 
+led_time=[]
+res=0
+for i in range(len(led_status)-1):
+    led_time.append(res)
+    if led_status[i+1]-led_status[i]==1:
+            res+=4
+
 # Convert frame IDs to time in seconds
 time_seconds = [frame_id / fps for frame_id in range(len(led_status))]
 
@@ -54,33 +61,13 @@ plt.grid(True)
 plt.legend(loc = "best")
 plt.show()
 
-def get_color_redLED(): # Get the colors of all the pixels of one frame of the red LED
+# Plotting
+plt.figure(figsize=(10, 6))
+plt.plot(time_seconds[:-1], led_time, '-o', markersize=2, label='LED Status')
+plt.title('LED Time Over Time')
+plt.xlabel('Time (seconds)')
+plt.ylabel('LED Time')
+plt.grid(True)
+plt.legend(loc = "best")
+plt.show()
 
-    LED_zone = frame[h_led_s:h_led_e, w_led_s:w_led_e]
-    one_frame_LED_colors = [] #Initialize a list to stock colors of pixels
-
-    for row in range(LED_zone.shape[0]):
-        for col in range(LED_zone.shape[1]):
-            blue, green, red = frame[row, col]
-
-            one_frame_LED_colors.append((blue, green, red))
-    return one_frame_LED_colors
-
-def mean_color_redLED(colors): # Get the mean color of one frame of the red LED
-
-    mean_R, mean_G, mean_B = 0,0,0
-
-    for color in colors:
-        mean_R += color[0]
-        mean_G += color[1]
-        mean_B += color[2]
-    
-    nb_pixels = len(colors)
-    mean_R /= nb_pixels
-    mean_G /= nb_pixels
-    mean_B /= nb_pixels
-
-    return (mean_R, mean_B, mean_G)
-
-def get_starting_time_redLED(): # Plot the luminescence as a function of frames, then extrapolate to get the starting time of lighting of the red LED
-    return None
