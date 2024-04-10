@@ -128,7 +128,7 @@ class VideoProcessor :
             labels = ["Opening :","Getting FPS :","Speed Treatment :","Time Treatment :", "Km Treatment :","CSV Writing : ", "Closing :", "Others"]
             values =[T_opening/T_treatment, T_fps/T_treatment, T_speed/T_treatment, T_time/T_treatment, T_km/T_treatment, T_write/T_treatment, T_closing, T_others/T_treatment]
             print("Review :\n" +"\n".join(["{0} {1:%}".format(label, value) for label, value in zip(labels, values)]))
-            fig, ax = plt.subplots()
+            fig, ax = plt.subplots( " Time segmentation") # TEST
             ax.pie(values, explode= explode, labels=None, startangle=90, labeldistance= 1.2)
             plt.legend(labels,loc= "best")
             plt.axis('equal')
