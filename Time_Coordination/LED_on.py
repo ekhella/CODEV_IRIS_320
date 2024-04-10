@@ -41,13 +41,19 @@ else:
 
     cap.release()
 
+offset=1
+while led_status[offset]-led_status[offset-1]!=1:
+     offset+=1
+
 led_time=[]
 res=0
-for i in range(len(led_status)-1):
+regr=[[0,0]]
+for i in range(offset, len(led_status)-1):
     led_time.append(res)
     if led_status[i+1]-led_status[i]==1:
             res+=4
-
+            regr.append([i-offset,res])
+          
 # Convert frame IDs to time in seconds
 time_seconds = [frame_id / fps for frame_id in range(len(led_status))]
 
@@ -61,9 +67,11 @@ plt.grid(True)
 plt.legend(loc = "best")
 plt.show()
 
+time_seconds_offset = [t - time_seconds[offset] for t in time_seconds[offset:-1]]
 # Plotting
 plt.figure(figsize=(10, 6))
-plt.plot(time_seconds[:-1], led_time, '-o', markersize=2, label='LED Status')
+plt.plot( time_seconds_offset, led_time, '-o', markersize=2, label='LED Status')
+plt.plot([time_seconds_offset[i] for i in[point[0] for point in regr]], [point[1] for point in regr], '-o', markersize=2, label = "Linear Up regression", color="Red" )
 plt.title('LED Time Over Time')
 plt.xlabel('Time (seconds)')
 plt.ylabel('LED Time')
