@@ -45,17 +45,26 @@ offset=1
 while led_status[offset]-led_status[offset-1]!=1:
      offset+=1
 
-led_time=[]
-res=0
+led_time_offset=[]
+res_offset=0
 regr=[[0,0]]
 for i in range(offset, len(led_status)-1):
+    led_time_offset.append(res_offset)
+    if led_status[i+1]-led_status[i]==1:
+            res_offset+=4
+            regr.append([i-offset,res_offset])
+
+led_time=[]
+res=0
+for i in range(len(led_status)-1):
     led_time.append(res)
     if led_status[i+1]-led_status[i]==1:
-            res+=4
-            regr.append([i-offset,res])
-          
-# Convert frame IDs to time in seconds
-time_seconds = [frame_id / fps for frame_id in range(len(led_status))]
+            res+=4          
+
+time_seconds = [frame_id / fps for frame_id in range(len(led_status))] # Convert frame IDs to time in seconds
+time_seconds_offset = [t - time_seconds[offset] for t in time_seconds[offset:-1]]  # Setting the new origin of the time
+time_regr = [time_seconds_offset[i] for i in[point[0] for point in regr]] # Taking the points of interest in the linear regression
+
 
 # Plotting
 plt.figure(figsize=(10, 6))
@@ -67,13 +76,21 @@ plt.grid(True)
 plt.legend(loc = "best")
 plt.show()
 
-time_seconds_offset = [t - time_seconds[offset] for t in time_seconds[offset:-1]]
-time_regr = [time_seconds_offset[i] for i in[point[0] for point in regr]]
 # Plotting
 plt.figure(figsize=(10, 6))
-plt.plot( time_seconds_offset, led_time, '-o', markersize=2, label='LED Status')
+plt.plot( time_seconds_offset, led_time_offset, '-o', markersize=2, label='LED Time')
 plt.plot(time_regr, [point[1] for point in regr], '-o', markersize=2, label = "Linear Up regression", color="Red" )
-plt.title('LED Time Over Time')
+plt.title('LED Time Over Time after Offset')
+plt.xlabel('Time (seconds)')
+plt.ylabel('LED Time')
+plt.grid(True)
+plt.legend(loc = "best")
+plt.show()
+
+# Plotting
+plt.figure(figsize=(10, 6))
+plt.plot( time_seconds[:-1], led_time, '-o', markersize=2, label='LED Time')
+plt.title('LED Time Over Time before Offset')
 plt.xlabel('Time (seconds)')
 plt.ylabel('LED Time')
 plt.grid(True)
