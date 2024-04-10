@@ -68,10 +68,11 @@ plt.legend(loc = "best")
 plt.show()
 
 time_seconds_offset = [t - time_seconds[offset] for t in time_seconds[offset:-1]]
+time_regr = [time_seconds_offset[i] for i in[point[0] for point in regr]]
 # Plotting
 plt.figure(figsize=(10, 6))
 plt.plot( time_seconds_offset, led_time, '-o', markersize=2, label='LED Status')
-plt.plot([time_seconds_offset[i] for i in[point[0] for point in regr]], [point[1] for point in regr], '-o', markersize=2, label = "Linear Up regression", color="Red" )
+plt.plot(time_regr, [point[1] for point in regr], '-o', markersize=2, label = "Linear Up regression", color="Red" )
 plt.title('LED Time Over Time')
 plt.xlabel('Time (seconds)')
 plt.ylabel('LED Time')
