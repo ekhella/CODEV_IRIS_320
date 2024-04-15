@@ -126,6 +126,59 @@ def mean_color_redLED(colors): # Get the mean color of one frame of the red LED
 
     return (mean_R, mean_B, mean_G)
 
-def get_starting_time_redLED(): # Plot the luminescence as a function of frames, then extrapolate to get the starting time of lighting of the red LED
-#TO DO
-    return None
+def get_RGB():
+    video_path = 'Data_confidential/video_vision_perif.mp4'
+    cap = cv2.VideoCapture(video_path)
+    R_values, G_values, B_values = [], [], []
+
+    if not cap.isOpened():
+        print("Error opening video file")
+    else:
+        frame_id = 0
+        fps = cap.get(cv2.CAP_PROP_FPS) 
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break 
+        
+            R, G, B = mean_color_redLED(get_color_redLED())
+            R_values.append(R)
+            G_values.append(G)
+            B_values.append(B)
+
+            frame_id += 1
+
+        cap.release()
+    return R_values, G_values, B_values
+
+R_values, G_values, B_values = get_RGB
+time_seconds_bis = [frame_id / fps for frame_id in range(len(get_RGB()))]
+
+# Plotting 
+
+plt.figure(figsize=(10, 6))
+plt.plot(time_seconds_bis,R_values,'-o', markersize=2, label='R_values')
+plt.title('R values Over Time')
+plt.xlabel('Time (seconds)')
+plt.ylabel('R values (from 0 to 255)')
+plt.grid(True)
+plt.legend(loc = "best")
+plt.show()
+
+plt.figure(figsize=(10, 6))
+plt.plot(time_seconds_bis,G_values, '-o', markersize=2, label='G_values')
+plt.title('G values Over Time')
+plt.xlabel('Time (seconds)')
+plt.ylabel('G values (from 0 to 255)')
+plt.grid(True)
+plt.legend(loc = "best")
+plt.show()
+
+plt.figure(figsize=(10, 6))
+plt.plot(time_seconds_bis,B_values, '-o', markersize=2, label='B_values')
+plt.title('B values Over Time')
+plt.xlabel('Time (seconds)')
+plt.ylabel('B values (from 0 to 255)')
+plt.grid(True)
+plt.legend(loc = "best")
+plt.show()
