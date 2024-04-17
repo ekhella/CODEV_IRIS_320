@@ -103,17 +103,19 @@ def get_color_redLED(frame): # Get the colors of all the pixels of one frame of 
     LED_zone = frame[h_led_s:h_led_e, w_led_s:w_led_e]
     one_frame_LED_colors = [] #Initialize a list to stock colors of pixels
 
-    for row in range(LED_zone.shape[0]):
-        for col in range(LED_zone.shape[1]):
-            blue, green, red = frame[row, col]
-
-            one_frame_LED_colors.append((blue, green, red))
+    for row in LED_zone:
+        for pixel in row:
+            blue, green, red = pixel
+            one_frame_LED_colors.append((red, green, blue))  # Store as (red, green, blue)
     return one_frame_LED_colors
 
 def mean_color_redLED(colors):
+    if not colors:
+        return (0, 0, 0)  # Return black if no colors present
     mean_R, mean_G, mean_B = map(sum, zip(*colors))
     nb_pixels = len(colors)
     return (mean_R / nb_pixels, mean_G / nb_pixels, mean_B / nb_pixels)
+
 
 
 def get_RGB():
@@ -123,52 +125,55 @@ def get_RGB():
 
     if not cap.isOpened():
         print("Error opening video file")
-    else:
-        frame_id = 0
-        fps = cap.get(cv2.CAP_PROP_FPS) 
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break 
-        
-            R, G, B = mean_color_redLED(get_color_redLED(frame))
-            R_values.append(R)
-            G_values.append(G)
-            B_values.append(B)
+        return [], [], []
 
-            frame_id += 1
+    frame_id=0
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break 
+    
+        colors = get_color_redLED(frame)
+        R, G, B = mean_color_redLED(colors)
+        R_values.append(R)
+        G_values.append(G)
+        B_values.append(B)
 
-        cap.release()
+        frame_id += 1
+
+    cap.release()
     return R_values, G_values, B_values
 
 R_values, G_values, B_values = get_RGB()
 #time_seconds_bis = [frame_id / fps for frame_id in range(len(get_RGB()))]
 
 # Plotting 
+fig, axes = plt.subplots(3, 1, figsize=(10, 18))  # Three rows, one column
 
-plt.figure(figsize=(10, 6))
-plt.plot(time_seconds,R_values,'-o', markersize=2, label='R_values')
-plt.title('R values Over Time')
-plt.xlabel('Time (seconds)')
-plt.ylabel('R values (from 0 to 255)')
-plt.grid(True)
-plt.legend(loc = "best")
-plt.show()
+# Plot Red values
+axes[0].plot(time_seconds, R_values, '-o', markersize=2, label='Red Values')
+axes[0].set_title('Red Values Over Time')
+axes[0].set_xlabel('Time (seconds)')
+axes[0].set_ylabel('Red values (from 0 to 255)')
+axes[0].grid(True)
+axes[0].legend(loc='best')
 
-plt.figure(figsize=(10, 6))
-plt.plot(time_seconds,G_values, '-o', markersize=2, label='G_values')
-plt.title('G values Over Time')
-plt.xlabel('Time (seconds)')
-plt.ylabel('G values (from 0 to 255)')
-plt.grid(True)
-plt.legend(loc = "best")
-plt.show()
+# Plot Green values
+axes[1].plot(time_seconds, G_values, '-o', markersize=2, label='Green Values')
+axes[1].set_title('Green Values Over Time')
+axes[1].set_xlabel('Time (seconds)')
+axes[1].set_ylabel('Green values (from 0 to 255)')
+axes[1].grid(True)
+axes[1].legend(loc='best')
 
-plt.figure(figsize=(10, 6))
-plt.plot(time_seconds,B_values, '-o', markersize=2, label='B_values')
-plt.title('B values Over Time')
-plt.xlabel('Time (seconds)')
-plt.ylabel('B values (from 0 to 255)')
-plt.grid(True)
-plt.legend(loc = "best")
+# Plot Blue values
+axes[2].plot(time_seconds, B_values, '-o', markersize=2, label='Blue Values')
+axes[2].set_title('Blue Values Over Time')
+axes[2].set_xlabel('Time (seconds)')
+axes[2].set_ylabel('Blue values (from 0 to 255)')
+axes[2].grid(True)
+axes[2].legend(loc='best')
+
+# Adjust layout to prevent overlap
+plt.tight_layout()
 plt.show()
