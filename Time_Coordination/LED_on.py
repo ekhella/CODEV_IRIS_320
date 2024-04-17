@@ -98,7 +98,7 @@ plt.legend(loc = "best")
 plt.show()
 
 
-def get_color_redLED(): # Get the colors of all the pixels of one frame of the red LED
+def get_color_redLED(frame): # Get the colors of all the pixels of one frame of the red LED
 
     LED_zone = frame[h_led_s:h_led_e, w_led_s:w_led_e]
     one_frame_LED_colors = [] #Initialize a list to stock colors of pixels
@@ -131,7 +131,7 @@ def get_RGB():
             if not ret:
                 break 
         
-            R, G, B = mean_color_redLED(get_color_redLED())
+            R, G, B = mean_color_redLED(get_color_redLED(frame))
             R_values.append(R)
             G_values.append(G)
             B_values.append(B)
@@ -141,13 +141,13 @@ def get_RGB():
         cap.release()
     return R_values, G_values, B_values
 
-R_values, G_values, B_values = get_RGB
-time_seconds_bis = [frame_id / fps for frame_id in range(len(get_RGB()))]
+R_values, G_values, B_values = get_RGB()
+#time_seconds_bis = [frame_id / fps for frame_id in range(len(get_RGB()))]
 
 # Plotting 
 
 plt.figure(figsize=(10, 6))
-plt.plot(time_seconds_bis,R_values,'-o', markersize=2, label='R_values')
+plt.plot(time_seconds,R_values,'-o', markersize=2, label='R_values')
 plt.title('R values Over Time')
 plt.xlabel('Time (seconds)')
 plt.ylabel('R values (from 0 to 255)')
@@ -156,7 +156,7 @@ plt.legend(loc = "best")
 plt.show()
 
 plt.figure(figsize=(10, 6))
-plt.plot(time_seconds_bis,G_values, '-o', markersize=2, label='G_values')
+plt.plot(time_seconds,G_values, '-o', markersize=2, label='G_values')
 plt.title('G values Over Time')
 plt.xlabel('Time (seconds)')
 plt.ylabel('G values (from 0 to 255)')
@@ -165,7 +165,7 @@ plt.legend(loc = "best")
 plt.show()
 
 plt.figure(figsize=(10, 6))
-plt.plot(time_seconds_bis,B_values, '-o', markersize=2, label='B_values')
+plt.plot(time_seconds,B_values, '-o', markersize=2, label='B_values')
 plt.title('B values Over Time')
 plt.xlabel('Time (seconds)')
 plt.ylabel('B values (from 0 to 255)')
