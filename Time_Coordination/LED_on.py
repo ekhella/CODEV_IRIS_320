@@ -110,21 +110,11 @@ def get_color_redLED(): # Get the colors of all the pixels of one frame of the r
             one_frame_LED_colors.append((blue, green, red))
     return one_frame_LED_colors
 
-def mean_color_redLED(colors): # Get the mean color of one frame of the red LED
-
-    mean_R, mean_G, mean_B = 0,0,0
-
-    for color in colors:
-        mean_R += color[0]
-        mean_G += color[1]
-        mean_B += color[2]
-    
+def mean_color_redLED(colors):
+    mean_R, mean_G, mean_B = map(sum, zip(*colors))
     nb_pixels = len(colors)
-    mean_R /= nb_pixels
-    mean_G /= nb_pixels
-    mean_B /= nb_pixels
+    return (mean_R / nb_pixels, mean_G / nb_pixels, mean_B / nb_pixels)
 
-    return (mean_R, mean_B, mean_G)
 
 def get_RGB():
     video_path = 'Data_confidential/video_vision_perif.mp4'
