@@ -96,6 +96,7 @@ plt.ylabel('LED Time')
 plt.grid(True)
 plt.legend(loc = "best")
 plt.show()
+    
 
 
 def get_color_redLED(frame): # Get the colors of all the pixels of one frame of the red LED
