@@ -99,54 +99,54 @@ plt.show()
     
 
 
-def get_color_redLED(frame): # Get the colors of all the pixels of one frame of the red LED
+#def get_color_redLED(frame): # Get the colors of all the pixels of one frame of the red LED
 
-    LED_zone = frame[h_led_s:h_led_e, w_led_s:w_led_e]
-    one_frame_LED_colors = [] #Initialize a list to stock colors of pixels
+#    LED_zone = frame[h_led_s:h_led_e, w_led_s:w_led_e]
+#    one_frame_LED_colors = [] #Initialize a list to stock colors of pixels
 
-    for row in LED_zone:
-        for pixel in row:
-            blue, green, red = pixel
-            one_frame_LED_colors.append((red, green, blue))  # Store as (red, green, blue)
-    return one_frame_LED_colors
+#    for row in LED_zone:
+#        for pixel in row:
+#            blue, green, red = pixel
+#            one_frame_LED_colors.append((red, green, blue))  # Store as (red, green, blue)
+#    return one_frame_LED_colors
 
-def mean_color_redLED(colors):
-    if not colors:
-        return (0, 0, 0)  # Return black if no colors present
-    mean_R, mean_G, mean_B = map(sum, zip(*colors))
-    nb_pixels = len(colors)
-    return (mean_R / nb_pixels, mean_G / nb_pixels, mean_B / nb_pixels)
+#def mean_color_redLED(colors):
+#    if not colors:
+#        return (0, 0, 0)  # Return black if no colors present
+#    mean_R, mean_G, mean_B = map(sum, zip(*colors))
+#    nb_pixels = len(colors)
+#    return (mean_R / nb_pixels, mean_G / nb_pixels, mean_B / nb_pixels)
 
 
 
-def get_RGB():
-    video_path = 'Data_confidential/video_vision_perif.mp4'
-    cap = cv2.VideoCapture(video_path)
-    R_values, G_values, B_values = [], [], []
+video_path = 'Data_confidential/video_vision_perif.mp4'
+cap = cv2.VideoCapture(video_path)
+R_values, G_values, B_values = [], [], []
 
-    if not cap.isOpened():
-        print("Error opening video file")
-        return [], [], []
 
-    frame_id=0
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break 
-    
-        colors = get_color_redLED(frame)
-        R, G, B = mean_color_redLED(colors)
-        R_values.append(R)
-        G_values.append(G)
-        B_values.append(B)
+if not cap.isOpened():
+    print("Error opening video file")
 
-        frame_id += 1
+frame_id=0
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break 
 
-    cap.release()
-    return R_values, G_values, B_values
+    led_zone = frame[h_led_s:h_led_e, w_led_s:w_led_e]
+    new_size = np.shape(led_zone)[0]*np.shape(led_zone)[1] #New size is just the total number of pixels of the wanted zone
+    led_zone_list = np.reshape(led_zone,(new_size,3)) #We have now the wanted zone, it's a list of pixels (a pixel is a list of 3 int)
+    mean_red = np.mean(led_zone_list[:,0])
+    mean_green = np.mean(led_zone_list[:,1])
+    mean_blue = np.mean(led_zone_list[:2])
+    R_values.append(mean_red)
+    G_values.append(mean_green)
+    B_values.append(mean_blue)
 
-R_values, G_values, B_values = get_RGB()
-#time_seconds_bis = [frame_id / fps for frame_id in range(len(get_RGB()))]
+    frame_id += 1
+
+cap.release() 
+
 
 # Plotting 
 fig, axes = plt.subplots(3, 1, figsize=(10, 18))  # Three rows, one column
