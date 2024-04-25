@@ -97,28 +97,6 @@ plt.grid(True)
 plt.legend(loc = "best")
 plt.show()
     
-
-
-#def get_color_redLED(frame): # Get the colors of all the pixels of one frame of the red LED
-
-#    LED_zone = frame[h_led_s:h_led_e, w_led_s:w_led_e]
-#    one_frame_LED_colors = [] #Initialize a list to stock colors of pixels
-
-#    for row in LED_zone:
-#        for pixel in row:
-#            blue, green, red = pixel
-#            one_frame_LED_colors.append((red, green, blue))  # Store as (red, green, blue)
-#    return one_frame_LED_colors
-
-#def mean_color_redLED(colors):
-#    if not colors:
-#        return (0, 0, 0)  # Return black if no colors present
-#    mean_R, mean_G, mean_B = map(sum, zip(*colors))
-#    nb_pixels = len(colors)
-#    return (mean_R / nb_pixels, mean_G / nb_pixels, mean_B / nb_pixels)
-
-
-
 video_path = 'Data_confidential/video_vision_perif.mp4'
 cap = cv2.VideoCapture(video_path)
 R_values, G_values, B_values = [], [], []
@@ -136,9 +114,9 @@ while True:
     led_zone = frame[h_led_s:h_led_e, w_led_s:w_led_e]
     new_size = np.shape(led_zone)[0]*np.shape(led_zone)[1] #New size is just the total number of pixels of the wanted zone
     led_zone_list = np.reshape(led_zone,(new_size,3)) #We have now the wanted zone, it's a list of pixels (a pixel is a list of 3 int)
-    mean_red = np.mean(led_zone_list[:,0])
+    mean_blue = np.mean(led_zone_list[:,0])
     mean_green = np.mean(led_zone_list[:,1])
-    mean_blue = np.mean(led_zone_list[:2])
+    mean_red = np.mean(led_zone_list[:,2])
     R_values.append(mean_red)
     G_values.append(mean_green)
     B_values.append(mean_blue)
