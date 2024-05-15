@@ -48,7 +48,7 @@ class VideoProcessor:
     def __init__(self, video_path):
         self.id = None
         self.video_path = video_path
-        self.frame_id = 1
+        self.frame_id = 0
         self.total_frames = 0
         self.frames = []
         self.fps = 0
@@ -58,7 +58,7 @@ class VideoProcessor:
         zone_gray = cv2.cvtColor(zone, cv2.COLOR_BGR2GRAY)
         _, zone_bw = cv2.threshold(zone_gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
         zone_text = pytesseract.image_to_string(zone_bw, config=spec_config)
-        return zone_text.strip()
+        return str(zone_text.strip())
 
     def detect_change(self, zone_current, zone_previous, threshold=0):
         zone_current_gray = cv2.cvtColor(zone_current, cv2.COLOR_BGR2GRAY)
@@ -147,7 +147,7 @@ class VideoProcessor:
                         T_end_km = t.time()
                         T_km += T_end_km - T_start_km
 
-                        writer.writerow([self.frame_id, speed, time, km])
+                        writer.writerow([self.frame_id, speed, time, distance])
                         T_end_write = t.time()
                         T_write += T_end_write - T_end_km
 
@@ -157,7 +157,6 @@ class VideoProcessor:
                         prev_second_zone = second_zone
                         prev_km_zone = km_zone
                         prev_m_zone = m_zone
-                        test = ...
 
                     self.frame_id += 1
                     progress_bar(T_start_process, self.frame_id, self.total_frames)
