@@ -157,6 +157,7 @@ class VideoProcessor:
                         prev_second_zone = second_zone
                         prev_km_zone = km_zone
                         prev_m_zone = m_zone
+                        test = ...
 
                     self.frame_id += 1
                     progress_bar(T_start_process, self.frame_id, self.total_frames)
