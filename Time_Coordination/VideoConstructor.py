@@ -6,6 +6,7 @@ from segmentation_settings import w_hour_s, w_hour_e
 from segmentation_settings import w_minute_s, w_minute_e
 from segmentation_settings import w_second_s, w_second_e
 from segmentation_settings import w_km_e, w_km_s, h_km
+from segmentation_settings import w_m_e, w_m_s, h_m
 from pytesseract_configs import speed_config, km_config, time_config
 from segmentation_settings import bar_length, frame_decimation, explode
 from FrameConstructor import Frame
@@ -62,7 +63,7 @@ class VideoProcessor:
     def detect_change(self, zone_current, zone_previous, threshold=0):
         zone_current_gray = cv2.cvtColor(zone_current, cv2.COLOR_BGR2GRAY)
         zone_previous_gray = cv2.cvtColor(zone_previous, cv2.COLOR_BGR2GRAY)
-        _, zone_current_bw = cv2.threshold(zone_current_gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+        _, zone_current_bw = cv2.threshold(zone_current_gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU) 
         _, zone_previous_bw = cv2.threshold(zone_previous_gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
         difference = np.sum(np.abs(zone_current_bw.astype(int) - zone_previous_bw.astype(int)))
         return difference > threshold
@@ -93,9 +94,9 @@ class VideoProcessor:
             T_fps = Tf - T1
             print("\rGetting the FPS/dimensions took {0} to execute".format(convert_ms_to_time_format(T_fps * 1000)))
             T_speed, T_time, T_km, T_write = 0, 0, 0, 0
-            prev_speed_zone, prev_km_zone = None, None
+            prev_speed_zone, prev_km_zone, prev_m_zone = None, None, None
             prev_hour_zone, prev_minute_zone, prev_second_zone = None, None, None
-            last_speed, last_km = "", ""
+            last_speed, last_km, last_m = "", "", ""
             last_hour, last_minute, last_second = "", "", ""
 
             while True:
@@ -103,6 +104,7 @@ class VideoProcessor:
                 if success:
                     speed_zone = frame[-h_speed:, :w_speed]
                     km_zone = frame[:h_km, w_km_s:w_km_e]
+                    m_zone = frame[:h_m, w_m_s:w_m_e]
                     hour_zone = frame[:h_time, w_hour_s:w_hour_e]
                     minute_zone = frame[:h_time, w_minute_s:w_minute_e]
                     second_zone = frame[:h_time, w_second_s:w_second_e]
@@ -138,6 +140,10 @@ class VideoProcessor:
                         if prev_km_zone is None or self.detect_change(km_zone, prev_km_zone):
                             km = self.get_attribute(km_zone, km_config)
                             last_km = km
+                        if prev_m_zone is None or self.detect_change(m_zone, prev_m_zone):
+                            m = self.get_attribute(m_zone, km_config)
+                            last_m = m
+                        distance = "{}+{}".format(km, m)
                         T_end_km = t.time()
                         T_km += T_end_km - T_start_km
 
@@ -150,6 +156,7 @@ class VideoProcessor:
                         prev_minute_zone = minute_zone
                         prev_second_zone = second_zone
                         prev_km_zone = km_zone
+                        prev_m_zone = m_zone
 
                     self.frame_id += 1
                     progress_bar(T_start_process, self.frame_id, self.total_frames)
