@@ -65,6 +65,20 @@ time_seconds = [frame_id / fps for frame_id in range(len(led_status))] # Convert
 time_seconds_offset = [t - time_seconds[offset] for t in time_seconds[offset:-1]]  # Setting the new origin of the time
 time_regr = [time_seconds_offset[i] for i in[point[0] for point in regr]] # Taking the points of interest in the linear regression
 
+# Sample data points for linear regression
+x = time_regr
+y = [point[1] for point in regr]  # Extract y values (res_offsets)
+
+# Perform linear regression
+coefficients = np.polyfit(x, y, 1)  # '1' represents the degree of the polynomial, linear in this case
+
+# Coefficients
+slope = coefficients[0]
+intercept = coefficients[1]
+
+print(f"Slope (Directional Coefficient): {slope}")
+print(f"Intercept: {intercept}")
+
 
 # Plotting
 plt.figure(figsize=(10, 6))
