@@ -1,12 +1,12 @@
 from Modules import sys, cv2, np, csv, pytesseract, t, plt
 from Base import mess
 from segmentation_settings import w_speed, h_speed
-from segmentation_settings import h_time
+from segmentation_settings import h_time, h_distance
 from segmentation_settings import w_hour_s, w_hour_e
 from segmentation_settings import w_minute_s, w_minute_e
 from segmentation_settings import w_second_s, w_second_e
-from segmentation_settings import w_km_e, w_km_s, h_km
-from segmentation_settings import w_m_e, w_m_s, h_m
+from segmentation_settings import w_km_e, w_km_s
+from segmentation_settings import w_m_e, w_m_s
 from pytesseract_configs import speed_config, km_config, time_config
 from segmentation_settings import bar_length, frame_decimation, explode
 from FrameConstructor import Frame
@@ -57,7 +57,9 @@ class VideoProcessor:
     def get_attribute(self, zone, spec_config):
         zone_gray = cv2.cvtColor(zone, cv2.COLOR_BGR2GRAY)
         _, zone_bw = cv2.threshold(zone_gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-        zone_text = pytesseract.image_to_string(zone_bw, config=spec_config)
+        kernel= cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        morphed_current= cv2.morphologyEx(zone_bw, cv2.MORPH_CLOSE, kernel)
+        zone_text = pytesseract.image_to_string(morphed_current, config=spec_config)
         return str(zone_text.strip())
 
     def detect_change(self, zone_current, zone_previous, threshold=0):
@@ -65,7 +67,10 @@ class VideoProcessor:
         zone_previous_gray = cv2.cvtColor(zone_previous, cv2.COLOR_BGR2GRAY)
         _, zone_current_bw = cv2.threshold(zone_current_gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU) 
         _, zone_previous_bw = cv2.threshold(zone_previous_gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-        difference = np.sum(np.abs(zone_current_bw.astype(int) - zone_previous_bw.astype(int)))
+        kernel= cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        morphed_current= cv2.morphologyEx(zone_current_bw, cv2.MORPH_CLOSE, kernel)
+        morphed_previous= cv2.morphologyEx(zone_previous_bw, cv2.MORPH_CLOSE, kernel)
+        difference = np.sum(np.abs(morphed_current.astype(int) - morphed_previous.astype(int)))
         return difference > threshold
 
     def process_video(self):
@@ -103,8 +108,8 @@ class VideoProcessor:
                 success, frame = capture.read()
                 if success:
                     speed_zone = frame[-h_speed:, :w_speed]
-                    km_zone = frame[:h_km, w_km_s:w_km_e]
-                    m_zone = frame[:h_m, w_m_s:w_m_e]
+                    km_zone = frame[:h_distance, w_km_s:w_km_e]
+                    m_zone = frame[:h_distance, w_m_s:w_m_e]
                     hour_zone = frame[:h_time, w_hour_s:w_hour_e]
                     minute_zone = frame[:h_time, w_minute_s:w_minute_e]
                     second_zone = frame[:h_time, w_second_s:w_second_e]
