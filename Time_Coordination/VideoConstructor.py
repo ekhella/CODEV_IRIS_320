@@ -1,205 +1,213 @@
 from Modules import sys, cv2, np, csv, pytesseract, t, plt
-from Base import mess
-from segmentation_settings import w_speed, h_speed
-from segmentation_settings import h_time, h_distance
-from segmentation_settings import w_hour_s, w_hour_e
-from segmentation_settings import w_minute_s, w_minute_e
-from segmentation_settings import w_second_s, w_second_e
-from segmentation_settings import w_km_e, w_km_s
-from segmentation_settings import w_m_e, w_m_s
+
 from pytesseract_configs import speed_config, km_config, time_config
-from segmentation_settings import bar_length, frame_decimation, explode
-from FrameConstructor import Frame
-
-
-def convert_ms_to_time_format(ms):
-    """
-    Convert milliseconds to a time format (hours:minutes:seconds:milliseconds).
-    """
-    hours, ms = divmod(ms, 3600000)
-    minutes, ms = divmod(ms, 60000)
-    seconds, ms = divmod(ms, 1000)
-    return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}:{int(ms):03}"
-
-def progress_bar(start_time, frame_id, total_frames):
-    """
-    Prints the progress bar of the video treatment with estimated time left.
-    """
-    current_time = t.time()
-    elapsed_time = current_time - start_time
-    progress = frame_id / total_frames
-
-    if frame_id > 0:
-        estimated_total_time = elapsed_time / progress
-        estimated_time_left = estimated_total_time - elapsed_time
-        time_left_formatted = convert_ms_to_time_format(estimated_time_left * 1000)  # Convert seconds to ms
-    else:
-        time_left_formatted = "Calculating..."
-
-    block = int(round(bar_length * progress))
-    progress_text = "\rProgress: [{0}] {1:.2f}% ({2}/{3} frames). Estimated Time Left: {4}".format(
-        "#" * block + "-" * (bar_length - block), progress * 100, frame_id, total_frames, time_left_formatted
-    )
-    sys.stdout.write(progress_text)
-    sys.stdout.flush()
+from segmentation_settings import (
+    w_speed, h_speed, h_time, h_distance,
+    w_hour_s, w_hour_e, w_minute_s, w_minute_e,
+    w_second_s, w_second_e, w_km_e, w_km_s, w_m_e, w_m_s,
+    bar_length
+)
+from Base import mess
 
 
 class VideoProcessor:
     def __init__(self, video_path):
-        self.id = None
         self.video_path = video_path
+        self.capture = None
         self.frame_id = 0
         self.total_frames = 0
-        self.frames = []
-        self.fps = 0
-        self.frame_dimensions = [0, 0]
+        self.data_output = []
+        self.prev_data = {}
+        self.timings = {
+            'opening': 0,
+            'info': 0,
+            'extraction_speed': 0,
+            'extraction_marker': 0,
+            'extraction_time': 0,
+            'saving': 0,
+            'closing': 0,
+            'others': 0,
+            'total': 0
+        }
 
-    def get_attribute(self, zone, spec_config):
-        zone_gray = cv2.cvtColor(zone, cv2.COLOR_BGR2GRAY)
-        _, zone_bw = cv2.threshold(zone_gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-        kernel= cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-        morphed_current= cv2.morphologyEx(zone_bw, cv2.MORPH_CLOSE, kernel)
-        zone_text = pytesseract.image_to_string(morphed_current, config=spec_config)
-        return str(zone_text.strip())
+    @staticmethod
+    def convert_ms_to_time_format(ms):
+        hours, ms = divmod(ms, 3600000)
+        minutes, ms = divmod(ms, 60000)
+        seconds, ms = divmod(ms, 1000)
+        return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}:{int(ms):03}"
+    
+    def progress_bar(self, start_time):
+        current_time = t.time()
+        elapsed_time = current_time - start_time
+        progress = self.frame_id / self.total_frames
+        time_left_formatted = self.convert_ms_to_time_format((elapsed_time / progress - elapsed_time) * 1000) if self.frame_id > 0 else "Calculating..."
 
-    def detect_change(self, zone_current, zone_previous, threshold=0):
-        zone_current_gray = cv2.cvtColor(zone_current, cv2.COLOR_BGR2GRAY)
-        zone_previous_gray = cv2.cvtColor(zone_previous, cv2.COLOR_BGR2GRAY)
-        _, zone_current_bw = cv2.threshold(zone_current_gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU) 
-        _, zone_previous_bw = cv2.threshold(zone_previous_gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-        kernel= cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-        morphed_current= cv2.morphologyEx(zone_current_bw, cv2.MORPH_CLOSE, kernel)
-        morphed_previous= cv2.morphologyEx(zone_previous_bw, cv2.MORPH_CLOSE, kernel)
-        difference = np.sum(np.abs(morphed_current.astype(int) - morphed_previous.astype(int)))
-        return difference > threshold
+        block = int(round(bar_length * progress))
+        progress_text = f"\rProgress: [{'#' * block + '-' * (bar_length - block)}] {progress * 100:.2f}% ({self.frame_id}/{self.total_frames} frames). Estimated Time Left: {time_left_formatted}"
+        sys.stdout.write(progress_text)
+        sys.stdout.flush()
+
+    def measure_time(method):
+        def wrapper(self, *args, **kwargs):
+            start_time = t.time()
+            result = method(self, *args, **kwargs)
+            end_time = t.time()
+            self.timings[method.__name__] = end_time - start_time
+            return result
+        return wrapper
+
+    @measure_time
+    def open_video(self):
+        self.capture = cv2.VideoCapture(self.video_path)
+        if not self.capture.isOpened():
+            print(mess.P_open, end='')
+            return False
+        return True
+
+    @measure_time
+    def get_video_info(self):
+        self.fps = self.capture.get(cv2.CAP_PROP_FPS)
+        self.frame_dimensions = [int(self.capture.get(cv2.CAP_PROP_FRAME_WIDTH)), 
+                                 int(self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT))]
+        self.total_frames = int(self.capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        return None
+
+    def read_frame(self):
+        success, frame = self.capture.read()
+        return frame if success else None
+
+    def detect_change(self, current_zone, prev_zone, threshold=0):
+        if prev_zone is None:
+            return True
+        current_gray = cv2.cvtColor(current_zone, cv2.COLOR_BGR2GRAY)
+        previous_gray = cv2.cvtColor(prev_zone, cv2.COLOR_BGR2GRAY)
+        diff = cv2.absdiff(current_gray, previous_gray)
+        _, diff = cv2.threshold(diff, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+        change_percent = np.sum(diff) / diff.size
+        return change_percent > threshold
+
+    def extract_data_from_frame(self, frame):
+        T_extraction_start = t.time()
+        data = {}
+        zones = {
+            'speed': (frame[-h_speed:, :w_speed], speed_config, 'speed'),
+            'marker': {
+                'km': (frame[:h_distance, w_km_s:w_km_e], km_config, 'km'),
+                'm': (frame[:h_distance, w_m_s:w_m_e], km_config, 'm')
+            },
+            'time': {
+                'hour': (frame[:h_time, w_hour_s:w_hour_e], time_config, 'hour'),
+                'minute': (frame[:h_time, w_minute_s:w_minute_e], time_config, 'minute'),
+                'second': (frame[:h_time, w_second_s:w_second_e], time_config, 'second')
+            }
+        }
+
+        for key, value in zones.items():
+            start_extraction = t.time()
+            if key in ['time', 'marker']:
+                if key not in self.prev_data:
+                    self.prev_data[key] = {}
+                sub_data = {}
+                for subkey, (zone, config, label) in value.items():
+                    if label not in self.prev_data or self.detect_change(zone, self.prev_data[label][0]):
+                        text = self.get_text(zone, config)
+                        self.prev_data[label] = (zone, text)  # Store the zone for comparison and text for reuse
+                    else:
+                        text = self.prev_data[label][1]  # Reuse the text without recomputation
+                    sub_data[subkey] = text
+                if key == 'time':
+                    data[key] = "{}:{}:{}".format(sub_data['hour'], sub_data['minute'], sub_data['second'])
+                else:
+                    data[key] = "{}+{}".format(sub_data['km'], sub_data['m'])
+                self.timings['extraction_' + key] += t.time() - start_extraction
+            else:
+                zone, config, label = value
+                if label not in self.prev_data or self.detect_change(zone, self.prev_data[label][0]):
+                    text = self.get_text(zone, config)
+                    self.prev_data[label] = (zone, text)  # Store the zone for comparison and text for reuse
+                else:
+                    text = self.prev_data[label][1]  # Reuse the text without recomputation
+                data[key] = text
+                self.timings['extraction_' + key] += t.time() - start_extraction
+
+        T_extraction_end = t.time()
+        T_extraction = T_extraction_end - T_extraction_start
+        self.timings['extraction_total'] = T_extraction
+        return data
+
+    def get_text(self, zone, config):
+        gray = cv2.cvtColor(zone, cv2.COLOR_BGR2GRAY)
+        _, bw = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        morphed = cv2.morphologyEx(bw, cv2.MORPH_CLOSE, kernel)
+        return pytesseract.image_to_string(morphed, config=config).strip()
+
+    def save_data(self, data, format_type):
+        T_saving_start = t.time()
+        if format_type == 'csv':
+            if 'file' not in self.prev_data:  #
+                self.prev_data['file'] = open('videotreatment.csv', 'w', newline='')
+                self.prev_data['writer'] = csv.writer(self.prev_data['file'])
+                self.prev_data['writer'].writerow(['Frame', 'Speed', 'Time', 'Km marker'])
+            self.prev_data['writer'].writerow([self.frame_id, data['speed'], data['time'], data['marker']])
+
+        elif format_type in ['dict', 'list']:
+            if 'file' not in self.prev_data: 
+                self.prev_data['file'] = open('videotreatment.txt', 'w')  
+            if format_type == 'dict':
+                self.prev_data['file'].write(str({self.frame_id: data}) + '\n')
+            elif format_type == 'list':
+                self.prev_data['file'].write(str([data['speed'], data['time'], data['marker']]) + '\n')
+        self.timings['saving'] += t.time() - T_saving_start
 
     def process_video(self):
-        """
-        Returns frames, frame_number, fps, frame_size
-        """
-        T_start_process = t.time()
+        format_type = input("Choose output format (csv, dict, list): ")
+        start_time = t.time()
+        if not self.open_video():
+            print(mess.P_gettype, end='')
+        self.get_video_info()
 
-        capture = cv2.VideoCapture(self.video_path)
-        file = open('videotreatment.csv', 'w', newline='')
-        T_end_opening = t.time()
-        T_opening = T_end_opening - T_start_process
-        print("\rOpening the video took {0} to execute".format(convert_ms_to_time_format(T_opening * 1000)))
-        writer = csv.writer(file)
-        writer.writerow(['Frame', 'Speed', 'Time', 'Km marker'])
-        self.total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        while True:
+            frame = self.read_frame()
+            if frame is None:
+                break
 
-        if not capture.isOpened():
-            print(mess.P_open, end='')
-            return None
-        else:
-            T1 = t.time()
-            self.fps = capture.get(cv2.CAP_PROP_FPS)
-            self.frame_dimensions = [int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)), int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))]  # [WIDTH, HEIGHT]
-            Tf = t.time()
-            T_fps = Tf - T1
-            print("\rGetting the FPS/dimensions took {0} to execute".format(convert_ms_to_time_format(T_fps * 1000)))
-            T_speed, T_time, T_km, T_write = 0, 0, 0, 0
-            prev_speed_zone, prev_km_zone, prev_m_zone = None, None, None
-            prev_hour_zone, prev_minute_zone, prev_second_zone = None, None, None
-            last_speed, last_km, last_m = "", "", ""
-            last_hour, last_minute, last_second = "", "", ""
+            data = self.extract_data_from_frame(frame)
+            self.save_data(data, format_type)
+            self.progress_bar(start_time)
+            self.frame_id += 1
 
-            while True:
-                success, frame = capture.read()
-                if success:
-                    speed_zone = frame[-h_speed:, :w_speed]
-                    km_zone = frame[:h_distance, w_km_s:w_km_e]
-                    m_zone = frame[:h_distance, w_m_s:w_m_e]
-                    hour_zone = frame[:h_time, w_hour_s:w_hour_e]
-                    minute_zone = frame[:h_time, w_minute_s:w_minute_e]
-                    second_zone = frame[:h_time, w_second_s:w_second_e]
+        self.cleanup()
+        self.display_results(format_type)
 
-                    self.frames.append(Frame(self.frame_id, np.array(frame)))  # For now, the Frame Class is Useless but let's keep it
+    @measure_time
+    def cleanup(self):
+        if 'file' in self.prev_data:
+            self.prev_data['file'].close()
+        self.capture.release()
+        cv2.destroyAllWindows()
 
-                    if self.frame_id % frame_decimation == 0:
-                        speed, km = last_speed, last_km
-                        hour, minute, second = last_hour, last_minute, last_second
+    def display_results(self, format_type):
+        print("\nFinished processing. Data stored as:", format_type)
+        print("Timing Summary:")
+        for key, value in self.timings.items():
+            print(f"{key}: {self.convert_ms_to_time_format(value * 1000)}")
 
-                        T_start_speed = t.time()
-                        if prev_speed_zone is None or self.detect_change(speed_zone, prev_speed_zone):
-                            speed = self.get_attribute(speed_zone, speed_config)
-                            last_speed = speed
-                        T_end_speed = t.time()
-                        T_speed += T_end_speed - T_start_speed
+        labels = []
+        sizes = []
+        explode = []
 
-                        T_start_time = t.time()
-                        if prev_hour_zone is None or self.detect_change(hour_zone, prev_hour_zone):
-                            hour = self.get_attribute(hour_zone, time_config)
-                            last_hour = hour
-                        if prev_minute_zone is None or self.detect_change(minute_zone, prev_minute_zone):
-                            minute = self.get_attribute(minute_zone, time_config)
-                            last_minute = minute
-                        if prev_second_zone is None or self.detect_change(second_zone, prev_second_zone):
-                            second = self.get_attribute(second_zone, time_config)
-                            last_second = second
-                        time = "{}:{}:{}".format(hour, minute, second)
-                        T_end_time = t.time()
-                        T_time += T_end_time - T_start_time
+        for key, value in self.timings.items():
+            if value > 0:
+                labels.append(key)
+                sizes.append(value)
+                explode.append(0.1)  # Explode all slices for visibility
 
-                        T_start_km = t.time()
-                        if prev_km_zone is None or self.detect_change(km_zone, prev_km_zone):
-                            km = self.get_attribute(km_zone, km_config)
-                            last_km = km
-                        if prev_m_zone is None or self.detect_change(m_zone, prev_m_zone):
-                            m = self.get_attribute(m_zone, km_config)
-                            last_m = m
-                        distance = "{}+{}".format(km, m)
-                        T_end_km = t.time()
-                        T_km += T_end_km - T_start_km
-
-                        writer.writerow([self.frame_id, speed, time, distance])
-                        T_end_write = t.time()
-                        T_write += T_end_write - T_end_km
-
-                        prev_speed_zone = speed_zone
-                        prev_hour_zone = hour_zone
-                        prev_minute_zone = minute_zone
-                        prev_second_zone = second_zone
-                        prev_km_zone = km_zone
-                        prev_m_zone = m_zone
-
-                    self.frame_id += 1
-                    progress_bar(T_start_process, self.frame_id, self.total_frames)
-                else:
-                    print(mess.P_getvid, end='')
-                    break
-
-            print("\rSpeed treatment took {0} to execute".format(convert_ms_to_time_format(T_speed * 1000)))
-            print("\rTime treatment took {0} to execute".format(convert_ms_to_time_format(T_time * 1000)))
-            print("\rKm treatment took {0} to execute".format(convert_ms_to_time_format(T_km * 1000)))
-            print("\rWriting on the CSV took {0} to execute".format(convert_ms_to_time_format(T_write * 1000)))
-
-            T_start_closing = t.time()
-            capture.release()
-            cv2.destroyAllWindows()
-            file.close()
-            T_end_all = t.time()
-            T_closing = T_end_all - T_start_closing
-            T_treatment = T_end_all - T_start_process
-            T_others = T_treatment - (T_opening + T_fps + T_speed + T_time + T_km + T_write + T_closing)
-
-            # Ensure all values are non-negative
-            T_treatment = max(T_treatment, 0)
-            T_opening = max(T_opening, 0)
-            T_fps = max(T_fps, 0)
-            T_speed = max(T_speed, 0)
-            T_time = max(T_time, 0)
-            T_km = max(T_km, 0)
-            T_write = max(T_write, 0)
-            T_closing = max(T_closing, 0)
-            T_others = max(T_others, 0)
-
-            print("\rThis code took {0} to execute".format(convert_ms_to_time_format(T_treatment * 1000)))
-            labels = ["Opening:", "Getting FPS:", "Speed Treatment:", "Time Treatment:", "Km Treatment:", "CSV Writing:", "Closing:", "Others"]
-            values = [T_opening / T_treatment, T_fps / T_treatment, T_speed / T_treatment, T_time / T_treatment, T_km / T_treatment, T_write / T_treatment, T_closing / T_treatment, T_others / T_treatment]
-            print("Review:\n" + "\n".join(["{0} {1:%}".format(label, value) for label, value in zip(labels, values)]))
-            fig, ax = plt.subplots()
-            ax.pie(values, explode=explode, labels=None, startangle=90, labeldistance=1.2)
-            plt.legend(labels, loc="best")
-            plt.axis('equal')
-            plt.show()
+        explode = tuple(explode) # Ensure the size of explode matches the number of labels
+        _, ax1 = plt.subplots()
+        ax1.pie(sizes, explode=explode, labels=None, autopct='%1.1f%%', shadow=True, startangle=90, labeldistance=1.2)
+        ax1.axis('equal')  # Draw a circle
+        plt.legend(labels, loc="best")
+        plt.title('Execution Time Breakdown')
+        plt.show()

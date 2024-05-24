@@ -1,5 +1,7 @@
 from Modules import cv2
 
+## As this code had no real effect; it is currently unused
+
 gaussian_kernel_size = (5, 5)
 adaptive_threshold_block_size = 11
 adaptive_threshold_constant = 4
