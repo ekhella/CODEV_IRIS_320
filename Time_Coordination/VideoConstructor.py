@@ -190,6 +190,7 @@ class VideoProcessor:
             self.frame_id += 1
 
         self.cleanup()
+        self.plot_change_detection(self.video_processor.change_log)
         self.display_results(format_type)
 
     @measure_time
@@ -223,7 +224,7 @@ class VideoProcessor:
         plt.title('Execution Time Breakdown')
         plt.show()
     
-    def display_changes (results):
+    def display_changes (self, results):
         _ , ax = plt.subplots(figsize=(10, 6))
         for key, changes in results.items():
             ax.plot(changes, label=key)
