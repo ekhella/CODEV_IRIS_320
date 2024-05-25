@@ -15,7 +15,7 @@ def check_date_format(date_str):
     return bool(re.match(pattern, date_str))
 
 # Charger et analyser le fichier XML
-tree = ET.parse('videoxml.xml')
+tree = ET.parse('Data_confidential/videoxml.xml')
 root = tree.getroot()
 
 # Fonction pour parcourir et trouver les fichiers vidéo correspondant à une date ou la date la plus proche (inférieure ou égale)
