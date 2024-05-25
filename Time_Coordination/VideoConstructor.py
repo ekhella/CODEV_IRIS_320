@@ -29,6 +29,7 @@ class VideoProcessor:
             'others': 0,
             'total': 0
         }
+        self.change_log = {'speed': [], 'km': [], 'm': [], 'hour': [], 'minute': [], 'second': []}
 
     @staticmethod
     def convert_ms_to_time_format(ms):
@@ -161,6 +162,15 @@ class VideoProcessor:
                 self.prev_data['file'].write(str([data['speed'], data['time'], data['marker']]) + '\n')
         self.timings['saving'] += t.time() - T_saving_start
 
+    def save_changes(self):
+        self.change_log['speed'].append(self.detect_change(self.speed_zone, self.prev_data.get('speed', (None, None))[0]))
+        self.change_log['km'].append(self.detect_change(self.km_zone, self.prev_data.get('km', (None, None))[0]))
+        self.change_log['m'].append(self.detect_change(self.m_zone, self.prev_data.get('m', (None, None))[0]))
+        self.change_log['hour'].append(self.detect_change(self.hour_zone, self.prev_data.get('hour', (None, None))[0]))
+        self.change_log['minute'].append(self.detect_change(self.minute_zone, self.prev_data.get('minute', (None, None))[0]))
+        self.change_log['second'].append(self.detect_change(self.second_zone, self.prev_data.get('second', (None, None))[0]))
+
+
     def process_video(self):
         format_type = input("Choose output format (csv, dict, list): ")
         start_time = t.time()
@@ -175,6 +185,7 @@ class VideoProcessor:
 
             data = self.extract_data_from_frame(frame)
             self.save_data(data, format_type)
+            self.save_changes()
             self.progress_bar(start_time)
             self.frame_id += 1
 
@@ -210,4 +221,15 @@ class VideoProcessor:
         ax1.axis('equal')  # Draw a circle
         plt.legend(labels, loc="best")
         plt.title('Execution Time Breakdown')
+        plt.show()
+    
+    def display_changes (results):
+        _ , ax = plt.subplots(figsize=(10, 6))
+        for key, changes in results.items():
+            ax.plot(changes, label=key)
+
+        ax.set_xlabel('Frame Number')
+        ax.set_ylabel('Change Detected (True/False)')
+        ax.set_title('Change Detection Indicator Function')
+        ax.legend()
         plt.show()
