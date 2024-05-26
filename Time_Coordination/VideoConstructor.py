@@ -30,6 +30,7 @@ class VideoProcessor:
             'total': 0
         }
         self.change_log = {'speed': [], 'marker': [], 'time': []}
+        self.diff_log = {'speed': [], 'marker': [], 'time': []}
 
     @staticmethod
     def convert_ms_to_time_format(ms):
@@ -120,13 +121,13 @@ class VideoProcessor:
         - Boolean indicating whether a change was detected based on the threshold.
         """
         if prev_zone is None:
-            return True
+            return (0,True)
         current_gray = cv2.cvtColor(current_zone, cv2.COLOR_BGR2GRAY)
         previous_gray = cv2.cvtColor(prev_zone, cv2.COLOR_BGR2GRAY)
         _, current_bw = cv2.threshold(current_gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU) 
         _, previous_bw = cv2.threshold(previous_gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
         diff = np.sum(np.abs(current_bw.astype(int) - previous_bw.astype(int)))
-        return diff > threshold
+        return (diff, diff > threshold)
     
 
     def extract_data_from_frame(self, frame):
@@ -158,8 +159,9 @@ class VideoProcessor:
         for key, (zone, config) in zones.items():
             start_extraction = t.time()
             prev_zone = self.prev_data.get(key, (None, None))[0]
-            change_detected = self.detect_change(zone, prev_zone)
+            change_detected = self.detect_change(zone, prev_zone)[1]
             self.change_log[key].append(change_detected)
+            self.diff_log[key].append(self.detect_change(zone, prev_zone)[0])
             if prev_zone is None or change_detected:
                 text = self.get_text(zone, config=config)
                 self.prev_data[key] = (zone, text)
@@ -249,6 +251,7 @@ class VideoProcessor:
 
         self.cleanup()
         self.display_changes(self.change_log)
+        self.display_changes(self.diff_log)
         self.display_results(format_type)
 
     @measure_time
