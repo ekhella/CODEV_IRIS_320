@@ -2,9 +2,9 @@ from Modules import sys, cv2, np, csv, pytesseract, t, plt
 
 from pytesseract_configs import speed_config, km_config, time_config
 from segmentation_settings import (
-    width_marker_start, width_marker_end, height_marker,
-    width_time_start, width_time_end, height_time,
-    width_speed, height_speed,
+    w_speed, h_speed, h_time, h_distance,
+    w_hour_s, w_hour_e, w_minute_s, w_minute_e,
+    w_second_s, w_second_e, w_km_e, w_km_s, w_m_e, w_m_s,
     bar_length
 )
 from Base import mess
@@ -29,7 +29,7 @@ class VideoProcessor:
             'others': 0,
             'total': 0
         }
-        self.change_log = {'speed': [], 'marker': [], 'time': []}
+        self.change_log = {'speed': [], 'km': [], 'm': [], 'hour': [], 'minute': [], 'second': []}
 
     @staticmethod
     def convert_ms_to_time_format(ms):
@@ -123,11 +123,10 @@ class VideoProcessor:
             return True
         current_gray = cv2.cvtColor(current_zone, cv2.COLOR_BGR2GRAY)
         previous_gray = cv2.cvtColor(prev_zone, cv2.COLOR_BGR2GRAY)
-        _, current_bw = cv2.threshold(current_gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU) 
-        _, previous_bw = cv2.threshold(previous_gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-        diff = np.sum(np.abs(current_bw.astype(int) - previous_bw.astype(int)))
-        return diff > threshold
-    
+        diff = cv2.absdiff(current_gray, previous_gray)
+        _, diff = cv2.threshold(diff, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+        change_percent = np.sum(diff) / diff.size
+        return change_percent > threshold
 
     def extract_data_from_frame(self, frame):
         """
@@ -150,26 +149,54 @@ class VideoProcessor:
         T_extraction_start = t.time()
         data = {}
         zones = {
-            'speed': (frame[-height_speed:, :width_speed], speed_config),
-            'marker': (frame[:height_marker, width_marker_start:width_marker_end], km_config),  
-            'time': (frame[:height_time, width_time_start:width_time_end], time_config)     
+            'speed': (frame[-h_speed:, :w_speed], speed_config, 'speed'),
+            'marker': {
+                'km': (frame[:h_distance, w_km_s:w_km_e], km_config, 'km'),
+                'm': (frame[:h_distance, w_m_s:w_m_e], km_config, 'm')
+            },
+            'time': {
+                'hour': (frame[:h_time, w_hour_s:w_hour_e], time_config, 'hour'),
+                'minute': (frame[:h_time, w_minute_s:w_minute_e], time_config, 'minute'),
+                'second': (frame[:h_time, w_second_s:w_second_e], time_config, 'second')
+            }
         }
-    
-        for key, (zone, config) in zones.items():
+
+        for key, value in zones.items():
             start_extraction = t.time()
-            prev_zone = self.prev_data.get(key, (None, None))[0]
-            change_detected = self.detect_change(zone, prev_zone)
-            self.change_log[key].append(change_detected)
-            if prev_zone is None or change_detected:
-                text = self.get_text(zone, config=config)
-                self.prev_data[key] = (zone, text)
+            if key in ['time', 'marker']:
+                if key not in self.prev_data:
+                    self.prev_data[key] = {}
+                sub_data = {}
+                for subkey, (zone, config, label) in value.items():
+                    change_detected = self.detect_change(zone, self.prev_data.get(label, (None, None))[0])
+                    self.change_log[label].append(change_detected)
+                    if label not in self.prev_data or change_detected:
+                        text = self.get_text(zone, config)
+                        self.prev_data[label] = (zone, text) 
+                    else:
+                        text = self.prev_data[label][1]  
+                    sub_data[subkey] = text
+                if key == 'time':
+                    data[key] = "{}:{}:{}".format(sub_data['hour'], sub_data['minute'], sub_data['second'])
+                else:
+                    data[key] = "{}+{}".format(sub_data['km'], sub_data['m'])
+                self.timings['extraction_' + key] += t.time() - start_extraction
             else:
-                text = self.prev_data[key][1]
-            data[key] = text
-            self.timings['extraction_' + key] += t.time() - start_extraction
+                zone, config, label = value
+                change_detected = self.detect_change(zone, self.prev_data.get(label, (None, None))[0])
+                self.change_log[label].append(change_detected)
+                if label not in self.prev_data or change_detected:
+                #if label not in self.prev_data or self.detect_change(zone, self.prev_data[label][0]):
+                    text = self.get_text(zone, config)
+                    self.prev_data[label] = (zone, text)  
+                else:
+                    text = self.prev_data[label][1] 
+                data[key] = text
+                self.timings['extraction_' + key] += t.time() - start_extraction
 
         T_extraction_end = t.time()
-        self.timings['extraction_total'] = T_extraction_end - T_extraction_start
+        T_extraction = T_extraction_end - T_extraction_start
+        self.timings['extraction_total'] = T_extraction
         return data
 
     def get_text(self, zone, config):
@@ -183,9 +210,9 @@ class VideoProcessor:
         """
         gray = cv2.cvtColor(zone, cv2.COLOR_BGR2GRAY)
         _, bw = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-        #kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-        #morphed = cv2.morphologyEx(bw, cv2.MORPH_CLOSE, kernel)
-        return pytesseract.image_to_string(bw, config=config).strip()
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        morphed = cv2.morphologyEx(bw, cv2.MORPH_CLOSE, kernel)
+        return pytesseract.image_to_string(morphed, config=config).strip()
 
     def save_data(self, data, format_type):
         """
