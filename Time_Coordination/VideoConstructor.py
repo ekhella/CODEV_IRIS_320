@@ -314,16 +314,16 @@ class VideoProcessor:
     
     def display_changes (self, results):
         """
-        Displays a plot of detected changes over the course of the video processing.
+        Displays individual plots of detected changes over the course of the video processing for each type of data extracted.
         Inputs:
         - results: Dictionary containing lists of change detection results for each label.
         """
-        _ , ax = plt.subplots(figsize=(10, 6))
         for key, changes in results.items():
-            ax.plot(changes, label=key)
-
-        ax.set_xlabel('Frame Number')
-        ax.set_ylabel('Change Detected (True/False)')
-        ax.set_title('Change Detection Indicator Function')
-        ax.legend()
-        plt.show()
+            plt.figure(figsize=(10, 6))  # Create a new figure for each key
+            plt.plot(changes, label=key, marker='o', linestyle='-')  # Mark each change point
+            plt.title(f'Change Detection: {key}')
+            plt.xlabel('Frame Number')
+            plt.ylabel('Change Detected (True/False)')
+            plt.legend()
+            plt.grid(True)  # Optionally add grid for better visibility
+            plt.show()
