@@ -1,4 +1,18 @@
 import matplotlib.pyplot as plt
+#from VideoConstructor import convert_time_format_to_ms
+
+def convert_time_format_to_s(time_format):
+        """
+        Converts milliseconds to time format
+        Input : Time in HH:MM:SS
+        Output : Time in ms (ending with 3 zeros)
+        """
+        heures, minutes, secondes = map(int, time_format.split(':'))
+        s_heures = heures * 3600
+        s_minutes = minutes * 60
+        s_secondes = secondes
+        time_in_s = s_heures + s_minutes + s_secondes
+        return time_in_s
 
 def marker_format_to_meters(marker_format):
     '''
@@ -36,6 +50,7 @@ data = read_data_from_file(file_path)
 # Récupérer les mètres pour chaque numéro de trame
 frames = list(data.keys())
 markers_meters = [marker_format_to_meters(data[frame]['marker']) for frame in frames]
+times_seconds = [convert_time_format_to_s(data[frame]['time']) for frame in frames]
 
 # Tracer l'évolution des mètres en fonction du numéro de frame
 plt.plot(frames, markers_meters, marker='o', linestyle='-')
@@ -45,4 +60,10 @@ plt.title('Évolution des mètres en fonction du numéro de frame')
 plt.grid(True)
 plt.show()
 
-#Test
+# Tracer l'évolution du temps en fonction du numéro de frame
+plt.plot(frames, times_seconds, marker='o', linestyle='-')
+plt.xlabel('Numéro de frame')
+plt.ylabel('Temps (secondes)')
+plt.title('Évolution du temps en fonction du numéro de frame')
+plt.grid(True)
+plt.show()
