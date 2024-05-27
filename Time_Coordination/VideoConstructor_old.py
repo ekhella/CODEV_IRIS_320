@@ -1,12 +1,11 @@
 from Modules import sys, cv2, np, csv, pytesseract, t, plt
 from Base import mess
-from segmentation_settings import w_speed, h_speed
-from segmentation_settings import h_time, h_distance
-from segmentation_settings import w_hour_s, w_hour_e
-from segmentation_settings import w_minute_s, w_minute_e
-from segmentation_settings import w_second_s, w_second_e
-from segmentation_settings import w_km_e, w_km_s
-from segmentation_settings import w_m_e, w_m_s
+from segmentation_settings import (
+    width_marker_start, width_marker_end, height_marker,
+    width_time_start, width_time_end, height_time,
+    width_date_start, width_date_end, height_date,
+    width_speed, height_speed,
+    )
 from pytesseract_configs import speed_config, km_config, time_config
 from segmentation_settings import bar_length, frame_decimation, explode
 from FrameConstructor import Frame
@@ -71,7 +70,7 @@ class VideoProcessor:
         morphed_current= cv2.morphologyEx(zone_current_bw, cv2.MORPH_CLOSE, kernel)
         morphed_previous= cv2.morphologyEx(zone_previous_bw, cv2.MORPH_CLOSE, kernel)
         difference = np.sum(np.abs(morphed_current.astype(int) - morphed_previous.astype(int)))
-        return difference > threshold
+        return difference, difference > threshold
     
     def open_video_timed(self):
         T_start_opening = t.time()
@@ -106,6 +105,10 @@ class VideoProcessor:
         self.select_output_format()
         writer = csv.writer(self.file)
         writer.writerow(['Frame', 'Speed', 'Time', 'Km marker'])
+        difference_time = []
+        difference_km = []
+        difference_date = []
+        difference_speed = []
 
         if not self.capture.isOpened():
             print(mess.P_open, end='')
@@ -114,69 +117,62 @@ class VideoProcessor:
             T_info = self.get_video_info_timed()
 
             T_speed, T_time, T_km, T_write = 0, 0, 0, 0
-            prev_speed_zone, prev_km_zone, prev_m_zone = None, None, None
-            prev_hour_zone, prev_minute_zone, prev_second_zone = None, None, None
-            last_speed, last_km, last_m = "", "", ""
-            last_hour, last_minute, last_second = "", "", ""
+            prev_speed_zone, prev_km_zone, prev_time_zone, prev_date_zone = None, None, None, None
+            last_speed, last_km, last_time, last_date = "", "", "", ""
 
             while True:
                 success, frame = self.capture.read()
                 if success:
-                    speed_zone = frame[-h_speed:, :w_speed]
-                    km_zone = frame[:h_distance, w_km_s:w_km_e]
-                    m_zone = frame[:h_distance, w_m_s:w_m_e]
-                    hour_zone = frame[:h_time, w_hour_s:w_hour_e]
-                    minute_zone = frame[:h_time, w_minute_s:w_minute_e]
-                    second_zone = frame[:h_time, w_second_s:w_second_e]
+                    speed_zone = frame[-height_speed:, :width_speed]
+                    km_zone = frame[:height_marker, width_marker_start:width_marker_end]
+                    time_zone = frame[:height_time, width_time_start:width_time_end]
+                    date_zone = frame[:height_date, width_date_start:width_date_end]
 
                     self.frames.append(Frame(self.frame_id, np.array(frame)))  # For now, the Frame Class is Useless but let's keep it
 
                     if self.frame_id % frame_decimation == 0:
-                        speed, km = last_speed, last_km
-                        hour, minute, second = last_hour, last_minute, last_second
+                        speed, km, time, date = last_speed, last_km, last_time, last_date
 
                         T_start_speed = t.time()
-                        if prev_speed_zone is None or self.detect_change(speed_zone, prev_speed_zone):
+                        if prev_speed_zone is None or self.detect_change(speed_zone, prev_speed_zone)[1]:
                             speed = self.get_attribute(speed_zone, speed_config)
                             last_speed = speed
+                        difference_speed.append(self.detect_change(speed_zone, prev_speed_zone)[0])
                         T_end_speed = t.time()
                         T_speed += T_end_speed - T_start_speed
 
                         T_start_time = t.time()
-                        if prev_hour_zone is None or self.detect_change(hour_zone, prev_hour_zone):
-                            hour = self.get_attribute(hour_zone, time_config)
-                            last_hour = hour
-                        if prev_minute_zone is None or self.detect_change(minute_zone, prev_minute_zone):
-                            minute = self.get_attribute(minute_zone, time_config)
-                            last_minute = minute
-                        if prev_second_zone is None or self.detect_change(second_zone, prev_second_zone):
-                            second = self.get_attribute(second_zone, time_config)
-                            last_second = second
-                        time = "{}:{}:{}".format(hour, minute, second)
+                        if prev_time_zone is None or self.detect_change(time_zone, prev_time_zone)[1]:
+                            time = self.get_attribute(time_zone, time_config)
+                            last_time = time
+                        difference_time.append(self.detect_change(time_zone, prev_time_zone)[0])
+
+                        if prev_date_zone is None or self.detect_change(date_zone, prev_date_zone)[1]:
+                            date = self.get_attribute(date_zone, time_config)
+                            last_date = date
+                        difference_date.append(self.detect_change(date_zone, prev_date_zone)[0])
+
                         T_end_time = t.time()
                         T_time += T_end_time - T_start_time
 
                         T_start_km = t.time()
-                        if prev_km_zone is None or self.detect_change(km_zone, prev_km_zone):
+                        if prev_km_zone is None or self.detect_change(km_zone, prev_km_zone)[1]:
                             km = self.get_attribute(km_zone, km_config)
                             last_km = km
-                        if prev_m_zone is None or self.detect_change(m_zone, prev_m_zone):
-                            m = self.get_attribute(m_zone, km_config)
-                            last_m = m
-                        distance = "{}+{}".format(km, m)
+                        difference_km.append(self.detect_change(km_zone, prev_km_zone)[0])
+
                         T_end_km = t.time()
                         T_km += T_end_km - T_start_km
 
-                        writer.writerow([self.frame_id, speed, time, distance])
+                        writer.writerow([self.frame_id, speed, time, km, date])
                         T_end_write = t.time()
                         T_write += T_end_write - T_end_km
 
                         prev_speed_zone = speed_zone
-                        prev_hour_zone = hour_zone
-                        prev_minute_zone = minute_zone
-                        prev_second_zone = second_zone
+                        prev_time_zone = time_zone
                         prev_km_zone = km_zone
-                        prev_m_zone = m_zone
+                        prev_date_zone = date_zone
+
 
                     self.frame_id += 1
                     progress_bar(T_start_process, self.frame_id, self.total_frames)
@@ -217,4 +213,17 @@ class VideoProcessor:
             ax.pie(values, explode=explode, labels=None, startangle=90, labeldistance=1.2)
             plt.legend(labels, loc="best")
             plt.axis('equal')
+            plt.show()
+            
+            plt.figure()
+            plt.plot(difference_date, range(self.total_frames))
+            plt.show()
+            plt.figure()
+            plt.plot(difference_speed, range(self.total_frames))
+            plt.show()
+            plt.figure()
+            plt.plot(difference_time, range(self.total_frames))
+            plt.show()
+            plt.figure()
+            plt.plot(difference_km, range(self.total_frames))
             plt.show()

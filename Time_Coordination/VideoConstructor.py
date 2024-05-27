@@ -61,6 +61,16 @@ class VideoProcessor:
         progress_text = f"\rProgress: [{'#' * block + '-' * (bar_length - block)}] {progress * 100:.2f}% ({self.frame_id}/{self.total_frames} frames). Estimated Time Left: {time_left_formatted}"
         sys.stdout.write(progress_text)
         sys.stdout.flush()
+    
+    def rewrite_marker_format(list_km):
+    # Nouvelle liste pour stocker les éléments modifiés
+        new_list_km = []
+        for borne_kilométrique in list_km:
+            borne_km_list = list(borne_kilométrique)
+            borne_km_list[3] = '+'
+            borne_kilométrique_new = ''.join(borne_km_list)
+            new_list_km.append(borne_kilométrique_new)
+        return new_list_km
 
     def measure_time(method):
         """
@@ -112,7 +122,7 @@ class VideoProcessor:
         success, frame = self.capture.read()
         return frame if success else None
 
-    def detect_change(self, current_zone, prev_zone, threshold=0):
+    def detect_change(self, current_zone, prev_zone, threshold=0.1):
         """
         Detects changes between two images (zones) using simple image processing techniques.
         Inputs:
@@ -129,7 +139,8 @@ class VideoProcessor:
         _, current_bw = cv2.threshold(current_gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU) 
         _, previous_bw = cv2.threshold(previous_gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
         diff = np.sum(np.abs(current_bw.astype(int) - previous_bw.astype(int)))
-        return (diff, diff > threshold)
+        sum_of_pixel_values = np.sum(current_bw.astype(int))
+        return (diff/sum_of_pixel_values, diff/sum_of_pixel_values > threshold)
     
 
     def extract_data_from_frame(self, frame):
@@ -167,6 +178,8 @@ class VideoProcessor:
             self.diff_log[key].append(self.detect_change(zone, prev_zone)[0])
             if prev_zone is None or change_detected:
                 text = self.get_text(zone, config=config)
+                if key=='marker':
+                    text=text
                 self.prev_data[key] = (zone, text)
             else:
                 text = self.prev_data[key][1]
