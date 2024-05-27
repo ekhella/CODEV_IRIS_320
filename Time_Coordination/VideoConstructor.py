@@ -38,6 +38,8 @@ class VideoProcessor:
     def rewrite_marker_format(self, km_marker):
         km_marker_list = list(km_marker)
         km_marker_list[3] = '+'
+        if km_marker_list[3] and km_marker_list[4] == '+':
+            km_marker_list.pop(3)
         km_marker_new = ''.join(km_marker_list)
         return km_marker_new
 
