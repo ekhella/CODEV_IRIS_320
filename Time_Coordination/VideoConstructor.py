@@ -71,6 +71,19 @@ class VideoProcessor:
             borne_kilométrique_new = ''.join(borne_km_list)
             new_list_km.append(borne_kilométrique_new)
         return new_list_km
+    
+    def convert_time_format_to_ms(time_format):
+        """
+        Converts milliseconds to time format
+        Input : Time in HH:MM:SS
+        Output : Time in ms (ending with 3 zeros)
+        """
+        heures, minutes, secondes = map(int, time_format.split(':'))
+        ms_heures = heures * 3600 * 1000
+        ms_minutes = minutes * 60 * 1000
+        ms_secondes = secondes * 1000
+        time_in_ms = ms_heures + ms_minutes + ms_secondes
+        return time_in_ms
 
     def measure_time(method):
         """
@@ -179,7 +192,7 @@ class VideoProcessor:
             if prev_zone is None or change_detected:
                 text = self.get_text(zone, config=config)
                 if key=='marker':
-                    text=text
+                    text=self.rewrite_marker_format(text)
                 self.prev_data[key] = (zone, text)
             else:
                 text = self.prev_data[key][1]
