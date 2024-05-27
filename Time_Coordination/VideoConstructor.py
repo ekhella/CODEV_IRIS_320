@@ -324,7 +324,7 @@ class VideoProcessor:
         """
         for key, changes in results.items():
             plt.figure(figsize=(10, 6))  # Create a new figure for each key
-            plt.plot(changes, label=key, marker='o', linestyle='-')  # Mark each change point
+            plt.plot(changes, label=key, marker='.', linestyle='-')  # Mark each change point
             plt.title(f'Change Detection: {key}')
             plt.xlabel('Frame Number')
             plt.ylabel('Change Detected (True/False)')
