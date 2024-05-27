@@ -1,4 +1,4 @@
-#The goal of this page is to get to the right video according to a certain time given by the user, 
+#The goal of this page is to get to the right video according to a certain time given by the user,
 #in order to analyse it after, to access to the exact wanted frame
 #We are using the XML file to search for the right video
 
@@ -56,6 +56,55 @@ else:
 
 
 
-def time_to_video(date_time):
-    if check_date_format(date_time):
-        return None
+#Now, if we want to access all the videos, to analyze them all
+
+def get_all_video_files(root):
+    video_files = []
+    for video in root.findall(".//Section"):
+        video_file = video.get('Video')
+        if video_file:
+            video_files.append(video_file)
+    return video_files
+
+#Vérification du bon fonctionnement de get_all_video_files
+all_videos = get_all_video_files(root)
+#print(f"Tous les fichiers vidéo contenus dans le fichier XML sont :")
+#for video in all_videos:
+#    print(video)
+
+#Now, if we want to access some videos between an interval of time
+
+def videos_in_time_interval(root, start_date_str, end_date_str):
+    if not check_date_format(start_date_str) or not check_date_format(end_date_str):
+        raise ValueError("Les dates ne sont pas au bon format. Utilisez 'JJ/MM/AA HH:MM'.")
+
+    # Convertir les dates données en objets datetime pour comparaison
+    start_date = datetime.strptime(start_date_str, "%d/%m/%y %H:%M")
+    end_date = datetime.strptime(end_date_str, "%d/%m/%y %H:%M")
+    
+    if start_date > end_date:
+        raise ValueError("La date de début doit être antérieure à la date de fin.")
+    
+    videos = []
+
+    for section in root.findall(".//Section"):
+        date_section_str = section.get('Date')
+        if date_section_str is not None:
+            date_section = datetime.strptime(date_section_str, "%d/%m/%y %H:%M")
+            
+            if start_date <= date_section <= end_date:
+                video_file = section.get('Video')
+                if video_file:
+                    videos.append(video_file)
+
+    return videos
+
+#Vérification du bon fonctionnement de videos_in_time_interval
+
+start_date = "23/10/18 08:10"
+end_date = "23/10/18 08:40"
+videos_interval = videos_in_time_interval(root, start_date, end_date)
+
+print(f"Les fichiers vidéo compris entre {start_date} et {end_date} sont :")
+for video in videos_interval:
+    print(video)

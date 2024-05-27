@@ -1,9 +1,10 @@
 from Modules import sys, cv2, np, csv, pytesseract, t, plt
 
-from pytesseract_configs import speed_config, km_config, time_config
+from pytesseract_configs import speed_config, km_config, time_config, date_config
 from segmentation_settings import (
     width_marker_start, width_marker_end, height_marker,
     width_time_start, width_time_end, height_time,
+    width_date_start, width_date_end, height_date,
     width_speed, height_speed,
     bar_length
 )
@@ -24,13 +25,14 @@ class VideoProcessor:
             'extraction_speed': 0,
             'extraction_marker': 0,
             'extraction_time': 0,
+            'extraction_date': 0,
             'saving': 0,
             'closing': 0,
             'others': 0,
             'total': 0
         }
-        self.change_log = {'speed': [], 'marker': [], 'time': []}
-        self.diff_log = {'speed': [], 'marker': [], 'time': []}
+        self.change_log = {'speed': [], 'marker': [], 'time': [],'date': []}
+        self.diff_log = {'speed': [], 'marker': [], 'time': [], 'date': []}
 
     @staticmethod
     def convert_ms_to_time_format(ms):
@@ -153,7 +155,8 @@ class VideoProcessor:
         zones = {
             'speed': (frame[-height_speed:, :width_speed], speed_config),
             'marker': (frame[:height_marker, width_marker_start:width_marker_end], km_config),  
-            'time': (frame[:height_time, width_time_start:width_time_end], time_config)     
+            'time': (frame[:height_time, width_time_start:width_time_end], time_config),    
+            'date': (frame[:height_date, width_date_start:width_date_end], date_config)  
         }
     
         for key, (zone, config) in zones.items():
@@ -185,8 +188,6 @@ class VideoProcessor:
         """
         gray = cv2.cvtColor(zone, cv2.COLOR_BGR2GRAY)
         _, bw = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-        #kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-        #morphed = cv2.morphologyEx(bw, cv2.MORPH_CLOSE, kernel)
         return pytesseract.image_to_string(bw, config=config).strip()
 
     def save_data(self, data, format_type):
@@ -201,8 +202,8 @@ class VideoProcessor:
             if 'file' not in self.prev_data:  #
                 self.prev_data['file'] = open('videotreatment.csv', 'w', newline='')
                 self.prev_data['writer'] = csv.writer(self.prev_data['file'])
-                self.prev_data['writer'].writerow(['Frame', 'Speed', 'Time', 'Km marker'])
-            self.prev_data['writer'].writerow([self.frame_id, data['speed'], data['time'], data['marker']])
+                self.prev_data['writer'].writerow(['Frame', 'Speed', 'Date', 'Time', 'Km marker'])
+            self.prev_data['writer'].writerow([self.frame_id, data['speed'],data['date'], data['time'], data['marker']])
 
         elif format_type in ['dict', 'list']:
             if 'file' not in self.prev_data: 
@@ -210,7 +211,7 @@ class VideoProcessor:
             if format_type == 'dict':
                 self.prev_data['file'].write(str({self.frame_id: data}) + '\n')
             elif format_type == 'list':
-                self.prev_data['file'].write(str([data['speed'], data['time'], data['marker']]) + '\n')
+                self.prev_data['file'].write(str([data['speed'],data['date'], data['time'], data['marker']]) + '\n')
         self.timings['saving'] += t.time() - T_saving_start
 
     def process_video(self):
