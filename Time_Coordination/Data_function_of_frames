@@ -67,3 +67,5 @@ plt.ylabel('Temps (secondes)')
 plt.title('Évolution du temps en fonction du numéro de frame')
 plt.grid(True)
 plt.show()
+
+#Test
