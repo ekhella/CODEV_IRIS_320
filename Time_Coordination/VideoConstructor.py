@@ -122,6 +122,7 @@ class VideoProcessor:
         self.frame_dimensions = [int(self.capture.get(cv2.CAP_PROP_FRAME_WIDTH)), 
                                  int(self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT))]
         self.total_frames = int(self.capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        self.total_duration = self.total_frames / self.fps
         return None
 
     def read_frame(self):
@@ -295,7 +296,7 @@ class VideoProcessor:
         print("Timing Summary:")
         for key, value in self.timings.items():
             print(f"{key}: {self.convert_ms_to_time_format(value * 1000)}")
-
+        print(f"The time ratio (duration/execution) is : ", self.timings['extraction_total']/self.total_duration)
         labels = []
         sizes = []
         explode = []
