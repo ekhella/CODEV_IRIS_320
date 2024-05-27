@@ -73,7 +73,7 @@ class VideoProcessor:
     
     def convert_time_format_to_ms(time_format):
         """
-        Converts milliseconds to time format
+        Converts time format to milliseconds
         Input : Time in HH:MM:SS
         Output : Time in ms (ending with 3 zeros)
         """

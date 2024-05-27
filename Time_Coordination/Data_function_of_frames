@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 
 def convert_time_format_to_s(time_format):
         """
-        Converts milliseconds to time format
+        Converts time format to seconds
         Input : Time in HH:MM:SS
-        Output : Time in ms (ending with 3 zeros)
+        Output : Time in s 
         """
         heures, minutes, secondes = map(int, time_format.split(':'))
         s_heures = heures * 3600
@@ -51,6 +51,7 @@ data = read_data_from_file(file_path)
 frames = list(data.keys())
 markers_meters = [marker_format_to_meters(data[frame]['marker']) for frame in frames]
 times_seconds = [convert_time_format_to_s(data[frame]['time']) for frame in frames]
+speeds = [float(data[frame]['speed']) for frame in frames]
 
 # Tracer l'évolution des mètres en fonction du numéro de frame
 plt.plot(frames, markers_meters, marker='o', linestyle='-')
@@ -68,4 +69,10 @@ plt.title('Évolution du temps en fonction du numéro de frame')
 plt.grid(True)
 plt.show()
 
-#Test
+# Tracer l'évolution de la vitesse en fonction du numéro de frame
+plt.plot(frames, speeds, marker='o', linestyle='-')
+plt.xlabel('Numéro de frame')
+plt.ylabel('Vitesse (km/h)')
+plt.title('Évolution de la vitesse en fonction du numéro de frame')
+plt.grid(True)
+plt.show()
