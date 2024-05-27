@@ -6,7 +6,8 @@ from segmentation_settings import (
     width_time_start, width_time_end, height_time,
     width_date_start, width_date_end, height_date,
     width_speed, height_speed,
-    bar_length
+    bar_length,
+    speed_threshold, time_threshold, marker_threshold, date_threshold
 )
 from Base import mess
 
@@ -29,10 +30,15 @@ class VideoProcessor:
             'saving': 0,
             'closing': 0,
             'others': 0,
-            'total': 0
         }
         self.change_log = {'speed': [], 'marker': [], 'time': [],'date': []}
         self.diff_log = {'speed': [], 'marker': [], 'time': [], 'date': []}
+    
+    def rewrite_marker_format(self, km_marker):
+        km_marker_list = list(km_marker)
+        km_marker_list[3] = '+'
+        km_marker_new = ''.join(km_marker_list)
+        return km_marker_new
 
     @staticmethod
     def convert_ms_to_time_format(ms):
@@ -61,16 +67,6 @@ class VideoProcessor:
         progress_text = f"\rProgress: [{'#' * block + '-' * (bar_length - block)}] {progress * 100:.2f}% ({self.frame_id}/{self.total_frames} frames). Estimated Time Left: {time_left_formatted}"
         sys.stdout.write(progress_text)
         sys.stdout.flush()
-    
-    def rewrite_marker_format(list_km):
-    # Nouvelle liste pour stocker les éléments modifiés
-        new_list_km = []
-        for borne_kilométrique in list_km:
-            borne_km_list = list(borne_kilométrique)
-            borne_km_list[3] = '+'
-            borne_kilométrique_new = ''.join(borne_km_list)
-            new_list_km.append(borne_kilométrique_new)
-        return new_list_km
     
     def convert_time_format_to_ms(time_format):
         """
@@ -135,7 +131,7 @@ class VideoProcessor:
         success, frame = self.capture.read()
         return frame if success else None
 
-    def detect_change(self, current_zone, prev_zone, threshold=0.1):
+    def detect_change(self, current_zone, prev_zone, threshold):
         """
         Detects changes between two images (zones) using simple image processing techniques.
         Inputs:
@@ -177,18 +173,18 @@ class VideoProcessor:
         T_extraction_start = t.time()
         data = {}
         zones = {
-            'speed': (frame[-height_speed:, :width_speed], speed_config),
-            'marker': (frame[:height_marker, width_marker_start:width_marker_end], km_config),  
-            'time': (frame[:height_time, width_time_start:width_time_end], time_config),    
-            'date': (frame[:height_date, width_date_start:width_date_end], date_config)  
+            'speed': (frame[-height_speed:, :width_speed], speed_config, speed_threshold),
+            'marker': (frame[:height_marker, width_marker_start:width_marker_end], km_config, marker_threshold),  
+            'time': (frame[:height_time, width_time_start:width_time_end], time_config, time_threshold),    
+            'date': (frame[:height_date, width_date_start:width_date_end], date_config, date_threshold)  
         }
     
-        for key, (zone, config) in zones.items():
+        for key, (zone, config, threshold) in zones.items():
             start_extraction = t.time()
             prev_zone = self.prev_data.get(key, (None, None))[0]
-            change_detected = self.detect_change(zone, prev_zone)[1]
+            change_detected = self.detect_change(zone, prev_zone, threshold)[1]
             self.change_log[key].append(change_detected)
-            self.diff_log[key].append(self.detect_change(zone, prev_zone)[0])
+            self.diff_log[key].append(self.detect_change(zone, prev_zone, threshold)[0])
             if prev_zone is None or change_detected:
                 text = self.get_text(zone, config=config)
                 if key=='marker':
@@ -200,7 +196,7 @@ class VideoProcessor:
             self.timings['extraction_' + key] += t.time() - start_extraction
 
         T_extraction_end = t.time()
-        self.timings['extraction_total'] = T_extraction_end - T_extraction_start
+        self.timings['extraction_total'] += T_extraction_end - T_extraction_start
         return data
 
     def get_text(self, zone, config):
