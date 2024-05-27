@@ -1,6 +1,6 @@
 bar_length = 50
-width_speed = 32
-height_speed, height_marker, height_time, height_date = 17, 17, 17, 17
+height_speed, height_marker, height_time, height_date = 16, 16, 16, 16
+width_speed = 30
 width_time_start, width_time_end = 557, 640
 width_marker_start, width_marker_end = 95 , 160
 width_date_start, width_date_end = 456, 553

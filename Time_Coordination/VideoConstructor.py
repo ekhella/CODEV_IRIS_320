@@ -27,6 +27,7 @@ class VideoProcessor:
             'extraction_marker': 0,
             'extraction_time': 0,
             'extraction_date': 0,
+            'extraction_total': 0,
             'saving': 0,
             'closing': 0,
             'others': 0,
@@ -296,16 +297,16 @@ class VideoProcessor:
         labels = []
         sizes = []
         explode = []
-
+        self.timings.pop('extraction_total', None)
         for key, value in self.timings.items():
             if value > 0:
                 labels.append(key)
                 sizes.append(value)
-                explode.append(0.1)  # Explode all slices for visibility
+                explode.append(0.1)
 
         explode = tuple(explode) # Ensure the size of explode matches the number of labels
         _, ax1 = plt.subplots()
-        ax1.pie(sizes, explode=explode, labels=None, autopct='%1.1f%%', shadow=True, startangle=90, labeldistance=1.2)
+        ax1.pie(sizes, explode=explode, labels=None, autopct='%1.1f%%', shadow=False, startangle=90, labeldistance=1.2)
         ax1.axis('equal')  # Draw a circle
         plt.legend(labels, loc="best")
         plt.title('Execution Time Breakdown')
