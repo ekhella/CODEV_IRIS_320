@@ -296,7 +296,7 @@ class VideoProcessor:
         print("Timing Summary:")
         for key, value in self.timings.items():
             print(f"{key}: {self.convert_ms_to_time_format(value * 1000)}")
-        print(f"Total Duration:", self.total_duration)
+        print(f"Total Duration of the video:", self.convert_ms_to_time_format(self.total_duration*1000))
         print(f"The time ratio (duration/execution) is : ", self.timings['extraction_total']/self.total_duration)
         labels = []
         sizes = []
