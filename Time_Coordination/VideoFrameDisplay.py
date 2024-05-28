@@ -37,10 +37,6 @@ video_path = "Data_confidential/video_arriere.mp4"
 data_path = "videotreatment.txt"
 
 video_display = VideoFrameDisplay(video_path, data_path)
-
-sys.stderr = open(os.devnull, 'w') #Deletes the secure warning message
-sys.stderr = sys.__stderr__
-
 time_input = int(input("Time :"))
 video_display.display_frame_for_time(time_input)
 video_display.release_resources()
