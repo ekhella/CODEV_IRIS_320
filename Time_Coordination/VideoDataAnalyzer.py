@@ -51,7 +51,7 @@ class VideoDataAnalyzer:
         plt.ylabel('Distance (meters)')
         plt.title('Distance Traveled Over Frames')
         plt.grid(True)
-        plt.show()
+        #plt.show()
 
     def plot_time_progression(self):
         plt.figure(figsize=(10, 6))
@@ -64,7 +64,7 @@ class VideoDataAnalyzer:
         plt.title('Time Progression Over Frames')
         plt.legend()
         plt.grid(True)
-        plt.show()
+        #plt.show()
 
     def plot_speeds(self):
         plt.figure(figsize=(10, 6))
@@ -73,10 +73,11 @@ class VideoDataAnalyzer:
         plt.ylabel('Speed (km/h)')
         plt.title('Speed Over Frames')
         plt.grid(True)
-        plt.show()
+        #plt.show()
 
 processor = VideoDataAnalyzer("videotreatment.txt")
-#processor.get_frame_number(time_input)
+#time_input=int(input("Time :"))
+#print(processor.get_frame_number(time_input))
 processor.plot_markers()
 processor.plot_time_progression()
 processor.plot_speeds()
