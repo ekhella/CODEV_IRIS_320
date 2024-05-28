@@ -1,20 +1,13 @@
 from Modules import sys, cv2, np, csv, pytesseract, t, plt
 
-from pytesseract_configs import speed_config, km_config, time_config, date_config
-from segmentation_settings import (
-    width_marker_start, width_marker_end, height_marker,
-    width_time_start, width_time_end, height_time,
-    width_date_start, width_date_end, height_date,
-    width_speed, height_speed,
-    bar_length,
-    speed_threshold, time_threshold, marker_threshold, date_threshold
-)
 from Base import mess
+from Settings import Settings
 
 
 class VideoProcessor:
     def __init__(self, video_path):
         self.video_path = video_path
+        self.settings = Settings()
         self.capture = None
         self.frame_id = 0
         self.total_frames = 0
@@ -66,6 +59,7 @@ class VideoProcessor:
         progress = self.frame_id / self.total_frames
         time_left_formatted = self.convert_ms_to_time_format((elapsed_time / progress - elapsed_time) * 1000) if self.frame_id > 0 else "Calculating..."
 
+        bar_length = self.settings.segmentation.bar_length
         block = int(round(bar_length * progress))
         progress_text = f"\rProgress: [{'#' * block + '-' * (bar_length - block)}] {progress * 100:.2f}% ({self.frame_id}/{self.total_frames} frames). Estimated Time Left: {time_left_formatted}"
         sys.stdout.write(progress_text)
@@ -176,11 +170,14 @@ class VideoProcessor:
     """
         T_extraction_start = t.time()
         data = {}
+        seg = self.settings.segmentation
+        pyt = self.settings.pytesseract
+        
         zones = {
-            'speed': (frame[-height_speed:, :width_speed], speed_config, speed_threshold),
-            'marker': (frame[:height_marker, width_marker_start:width_marker_end], km_config, marker_threshold),  
-            'time': (frame[:height_time, width_time_start:width_time_end], time_config, time_threshold),    
-            'date': (frame[:height_date, width_date_start:width_date_end], date_config, date_threshold)  
+            'speed': (frame[-seg.height_speed:, :seg.width_speed], pyt.speed, seg.thresholds['speed']),
+            'marker': (frame[:seg.height_marker, seg.width_marker[0]:seg.width_marker[1]], pyt.km, seg.thresholds['marker']),
+            'time': (frame[:seg.height_time, seg.width_time[0]:seg.width_time[1]], pyt.time, seg.thresholds['time']),
+            'date': (frame[:seg.height_date, seg.width_date[0]:seg.width_date[1]], pyt.date, seg.thresholds['date'])
         }
     
         for key, (zone, config, threshold) in zones.items():
