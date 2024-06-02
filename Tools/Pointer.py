@@ -1,0 +1,31 @@
+#Imports
+from VideoTreatment.Modules import cv2
+Video_Path = 'Data_confidential/video_arriere.mp4'
+
+capture = cv2.VideoCapture(Video_Path) 
+
+def mouse_callback(event, x, y, flags, param):
+    """
+    Returns tehe position of the Mouse Click relative to the image opened
+    """
+    if event == cv2.EVENT_LBUTTONDOWN:  
+        print(f"Position: (x={x}, y={y})") 
+
+if not capture.isOpened():
+    print("Error: Could not open video.")
+else:
+
+    ret, frame = capture.read()
+    if ret:
+        cv2.namedWindow('First Frame')
+
+        cv2.setMouseCallback('First Frame', mouse_callback)
+
+        cv2.imshow('First Frame', frame)
+
+        cv2.waitKey(0)
+
+        cv2.destroyAllWindows()
+    else:
+        print("Error: Could not read the first frame.")
+    capture.release()
