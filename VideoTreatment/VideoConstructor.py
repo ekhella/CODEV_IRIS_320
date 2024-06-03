@@ -259,19 +259,21 @@ class VideoProcessor:
         format_type = input("Choose output format (csv, dict, list): ")
         start_time = t.time()
 
-        while True:
+        for self.frame_id in range(self.total_frames):
             frame = self.read_frame()
             if frame is None:
                 break
-
-            data = self.extract_data_from_frame(frame)
-            self.save_data(data, format_type)
+            try:
+                data = self.extract_data_from_frame(frame)
+                self.save_data(data, format_type)
+            except Exception as e:
+                print(f"Error processing frame {self.frame_id}: {e}")
+                continue  # Skip this frame and go to the next one
             self.progress_bar(start_time)
-            self.frame_id += 1
 
         self.cleanup()
-        self.display_changes(self.change_log)
-        self.display_changes(self.diff_log)
+        #self.display_changes(self.change_log)
+        #self.display_changes(self.diff_log)
         self.display_results(format_type)
 
     @measure_time
