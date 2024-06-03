@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import find_peaks
-from VideoTreatment.LED_on_multiprocess import mean_colors, time_seconds
+from LED_on_multiprocess import mean_colors, time_seconds
 
 # Detect rising edges in the red channel
 red_channel = mean_colors[:, 2]

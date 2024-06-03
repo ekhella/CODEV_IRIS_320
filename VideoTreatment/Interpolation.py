@@ -1,15 +1,13 @@
-import math
 from scipy.optimize import newton
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from VideoTreatment.LED_on_multiprocess import time_regr
-from VideoTreatment.LED_on_multiprocess import regr
-from VideoTreatment.LED_on_multiprocess import time_seconds_offset
-from VideoTreatment.LED_on_multiprocess import offset
-from VideoTreatment.LED_on_multiprocess import led_time_offset
-from VideoTreatment.LED_on_multiprocess import led_status
-import datetime
+from LED_on_multiprocess import time_regr
+from LED_on_multiprocess import regr
+from LED_on_multiprocess import time_seconds_offset
+from LED_on_multiprocess import offset
+from LED_on_multiprocess import led_time_offset
+from LED_on_multiprocess import led_status
 from math import *
 
 def convert_to_hour_minute_second(seconds):
@@ -176,8 +174,6 @@ while i/fps <duration/4:
     time.append(t)
     i+=1
     
-
-
 # Check
 plt.figure(figsize=(10, 6))
 plt.plot(time_seconds_offset, led_time_offset, '-o', markersize=2, label='LED Time')
