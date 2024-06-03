@@ -3,12 +3,12 @@ from scipy.optimize import newton
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from Time_Coordination.LED_on_multiprocess import time_regr
-from Time_Coordination.LED_on_multiprocess import regr
-from Time_Coordination.LED_on_multiprocess import time_seconds_offset
-from Time_Coordination.LED_on_multiprocess import offset
-from Time_Coordination.LED_on_multiprocess import led_time_offset
-from Time_Coordination.LED_on_multiprocess import led_status
+from VideoTreatment.LED_on_multiprocess import time_regr
+from VideoTreatment.LED_on_multiprocess import regr
+from VideoTreatment.LED_on_multiprocess import time_seconds_offset
+from VideoTreatment.LED_on_multiprocess import offset
+from VideoTreatment.LED_on_multiprocess import led_time_offset
+from VideoTreatment.LED_on_multiprocess import led_status
 import datetime
 from math import *
 
