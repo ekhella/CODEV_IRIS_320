@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from segmentation_settings import w_led_s, w_led_e, h_led_s, h_led_e
+#from segmentation_settings import w_led_s, w_led_e, h_led_s, h_led_e
 
 def is_led_on(frame, hsv_thresholds):
     roi = frame[h_led_s:h_led_e, w_led_s:w_led_e] # Region of Interest (HOI)
