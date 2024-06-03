@@ -1,5 +1,4 @@
-from Modules import sys, cv2, np, csv, pytesseract, t, plt
-
+from Modules import sys, cv2, np, csv, pytesseract, t, plt, os
 from Base import mess
 from Settings import Settings
 
@@ -7,6 +6,7 @@ from Settings import Settings
 class VideoProcessor:
     def __init__(self, video_path):
         self.video_path = video_path
+        self.video_name = self.get_filename_without_extension(video_path)
         self.settings = Settings()
         self.capture = None
         self.frame_id = 0
@@ -223,19 +223,24 @@ class VideoProcessor:
         T_saving_start = t.time()
         if format_type == 'csv':
             if 'file' not in self.prev_data:  #
-                self.prev_data['file'] = open('videotreatment.csv', 'w', newline='')
+                self.prev_data['file'] = open(f'{self.video_name}.txt', 'w', newline='')
                 self.prev_data['writer'] = csv.writer(self.prev_data['file'])
                 self.prev_data['writer'].writerow(['Frame', 'Speed', 'Date', 'Time', 'Km marker'])
             self.prev_data['writer'].writerow([self.frame_id, data['speed'],data['date'], data['time'], data['marker']])
 
         elif format_type in ['dict', 'list']:
             if 'file' not in self.prev_data: 
-                self.prev_data['file'] = open('videotreatment.txt', 'w')  
+                self.prev_data['file'] = open(f'{self.video_name}.txt', 'w')  
             if format_type == 'dict':
                 self.prev_data['file'].write(str({self.frame_id: data}) + '\n')
             elif format_type == 'list':
                 self.prev_data['file'].write(str([data['speed'],data['date'], data['time'], data['marker']]) + '\n')
         self.timings['saving'] += t.time() - T_saving_start
+
+    def get_filename_without_extension(path):
+        base_name = os.path.basename(path)
+        file_name_without_extension, _ = os.path.splitext(base_name)
+        return file_name_without_extension
 
     def process_video(self):
         """

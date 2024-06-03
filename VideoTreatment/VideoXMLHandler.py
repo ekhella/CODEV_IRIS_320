@@ -1,6 +1,6 @@
 import re
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class VideoXMLHandler:
     def __init__(self, xml_file):
@@ -9,22 +9,30 @@ class VideoXMLHandler:
 
     @staticmethod
     def check_date_format(date_str):
-        pattern = r"^\d{2}/\d{2}/\d{2} \d{2}:\d{2}$"
+        pattern = r"^\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}:\d{3}$"
         return bool(re.match(pattern, date_str))
+
+    @staticmethod
+    def parse_datetime_with_milliseconds(date_str):
+        """ Parse datetime string with milliseconds 'DD/MM/YY HH:MM:SS:XXX' """
+        main_part, ms_part = date_str.rsplit(':', 1)
+        dt = datetime.strptime(main_part, "%d/%m/%y %H:%M:%S")
+        ms_delta = timedelta(milliseconds=int(ms_part))
+        return dt + ms_delta
 
     def time_to_video(self, date_str):
         if not self.check_date_format(date_str):
-            raise ValueError("Date format is incorrect. Use 'DD/MM/YY HH:MM'.")
+            raise ValueError("Date format is incorrect. Use 'DD/MM/YY HH:MM:SS:XXX'.")
 
-        given_date = datetime.strptime(date_str, "%d/%m/%y %H:%M")
+        given_date = self.parse_datetime_with_milliseconds(date_str)
         videos = []
         closest_date = None
 
         for section in self.root.findall(".//Section"):
             date_section_str = section.get('Date')
             if date_section_str:
+                # XML dates are written without seconds and milliseconds
                 date_section = datetime.strptime(date_section_str, "%d/%m/%y %H:%M")
-
                 if date_section <= given_date:
                     if closest_date is None or date_section > closest_date:
                         closest_date = date_section
@@ -44,10 +52,10 @@ class VideoXMLHandler:
 
     def videos_in_time_interval(self, start_date_str, end_date_str):
         if not self.check_date_format(start_date_str) or not self.check_date_format(end_date_str):
-            raise ValueError("Date formats are incorrect. Use 'DD/MM/YY HH:MM'.")
+            raise ValueError("Date formats are incorrect. Use 'DD/MM/YY HH:MM:SS:XXX'.")
 
-        start_date = datetime.strptime(start_date_str, "%d/%m/%y %H:%M")
-        end_date = datetime.strptime(end_date_str, "%d/%m/%y %H:%M")
+        start_date = self.parse_datetime_with_milliseconds(start_date_str)
+        end_date = self.parse_datetime_with_milliseconds(end_date_str)
         
         if start_date > end_date:
             raise ValueError("Start date must be earlier than the end date.")
@@ -64,16 +72,3 @@ class VideoXMLHandler:
                         videos.append(video_file)
 
         return videos
-
-# Test
-if __name__ == "__main__":
-    xml_handler = VideoXMLHandler('Data_confidential/videoxml.xml')
-    user_date = "23/10/18 15:34"
-    videos = xml_handler.time_to_video(user_date)
-
-    if videos:
-        print("Video files containing the desired frame for the user are:")
-        for video in videos:
-            print(video)
-    else:
-        print("No video files found for the given date.")

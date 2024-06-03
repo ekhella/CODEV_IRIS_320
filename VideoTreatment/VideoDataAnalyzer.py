@@ -1,9 +1,10 @@
-import matplotlib.pyplot as plt
-import numpy as np
+from Modules import plt
+from Modules import np
 
 class VideoDataAnalyzer:
-    def __init__(self, file_path):
+    def __init__(self, file_path, video_path):
         self.file_path = file_path
+        self.video_path = video_path
         self.data = self.read_data_from_file()
         self.frames = list(self.data.keys())
         self.markers_meters = [self.convert_marker_to_meters(self.data[frame]['marker']) for frame in self.frames]
@@ -74,10 +75,3 @@ class VideoDataAnalyzer:
         plt.title('Speed Over Frames')
         plt.grid(True)
         #plt.show()
-
-processor = VideoDataAnalyzer("videotreatment.txt")
-#time_input=int(input("Time :"))
-#print(processor.get_frame_number(time_input))
-processor.plot_markers()
-processor.plot_time_progression()
-processor.plot_speeds()

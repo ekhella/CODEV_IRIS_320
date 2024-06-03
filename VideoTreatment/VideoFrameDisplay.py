@@ -1,11 +1,14 @@
-from Modules import np, cv2, os, gp, sys
+from Modules import cv2, os, gp
 from VideoDataAnalyzer import VideoDataAnalyzer
-from VideoDirectoryTool import PathManager
+from Tools.VideoDirectoryTool import PathManager
 
 class VideoFrameDisplay:
     def __init__(self, video_path, data_path):
         self.video_path = video_path
         self.data_analyzer = VideoDataAnalyzer(data_path)
+        self.data_analyzer.plot_markers()
+        self.data_analyzer.plot_time_progression()
+        self.data_analyzer.plot_speeds()
         self.video_cap = cv2.VideoCapture(video_path)
         self.path_manager = PathManager(user=gp.getuser())
         self.frame_dir = self.path_manager.get_or_create_dir('SavedFrames')
@@ -33,10 +36,3 @@ class VideoFrameDisplay:
         self.video_cap.release()
         cv2.destroyAllWindows()
 
-video_path = "Data_confidential/video_arriere.mp4"
-data_path = "videotreatment.txt"
-
-video_display = VideoFrameDisplay(video_path, data_path)
-time_input = int(input("Time :"))
-video_display.display_frame_for_time(time_input)
-video_display.release_resources()
