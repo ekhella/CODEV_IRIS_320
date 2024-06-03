@@ -1,14 +1,16 @@
 from Modules import cv2, os, gp
 from VideoDataAnalyzer import VideoDataAnalyzer
-from Tools.VideoDirectoryTool import PathManager
+from VideoDirectoryTool import PathManager
 
 class VideoFrameDisplay:
-    def __init__(self, video_path, data_path):
+    def __init__(self, video_path, file_path, video_name):
         self.video_path = video_path
-        self.data_analyzer = VideoDataAnalyzer(data_path)
-        self.data_analyzer.plot_markers()
-        self.data_analyzer.plot_time_progression()
-        self.data_analyzer.plot_speeds()
+        self.data_analyzer = VideoDataAnalyzer(file_path, video_path)
+        #self.data_analyzer.plot_markers()
+        #self.data_analyzer.plot_time_progression()
+        #self.data_analyzer.plot_speeds()
+        self.video_name = video_name
+        self.motrice= self.video_name[:2]
         self.video_cap = cv2.VideoCapture(video_path)
         self.path_manager = PathManager(user=gp.getuser())
         self.frame_dir = self.path_manager.get_or_create_dir('SavedFrames')
@@ -23,7 +25,7 @@ class VideoFrameDisplay:
         self.video_cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
         ret, frame = self.video_cap.read()
         if ret:
-            frame_path = os.path.join(self.frame_dir, f"frame_at_{time_input}s.png")
+            frame_path = os.path.join(self.frame_dir, f"frame_at_{time_input}s_{self.motrice}.png")
             cv2.imwrite(frame_path, frame)
             cv2.imshow(f'Frame for Time: {time_input}s', frame)
             cv2.waitKey(0)

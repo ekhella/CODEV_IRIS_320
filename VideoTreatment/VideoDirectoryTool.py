@@ -1,5 +1,5 @@
-from VideoTreatment.Modules import os, t, sht, gp
-from VideoTreatment.Base import mess
+from Modules import os, t, sht, gp
+from Base import mess
 
 class PathManager:
     def __init__(self, user):

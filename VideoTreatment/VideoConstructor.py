@@ -8,11 +8,15 @@ class VideoProcessor:
         self.video_path = video_path
         self.video_name = self.get_filename_without_extension(video_path)
         self.settings = Settings()
-        self.capture = None
+        self.capture = cv2.VideoCapture(video_path)
+        if not self.capture.isOpened():
+            print(f"Failed to open video: {video_path}")
+            raise FileNotFoundError(f"Video file not found: {video_path}")
+        self.initialize_video_properties()
         self.frame_id = 0
-        self.total_frames = 0
         self.data_output = []
         self.prev_data = {}
+        self.data_path = ""  # Initialize without a specific file type
         self.timings = {
             'opening': 0,
             'info': 0,
@@ -25,8 +29,9 @@ class VideoProcessor:
             'closing': 0,
             'others': 0,
         }
-        self.change_log = {'speed': [], 'marker': [], 'time': [],'date': []}
+        self.change_log = {'speed': [], 'marker': [], 'time': [], 'date': []}
         self.diff_log = {'speed': [], 'marker': [], 'time': [], 'date': []}
+
     
     def rewrite_marker_format(self, km_marker):
         km_marker_list = list(km_marker)
@@ -88,36 +93,25 @@ class VideoProcessor:
             start_time = t.time()
             result = method(self, *args, **kwargs)
             end_time = t.time()
+            if not hasattr(self, 'timings'):
+                self.timings = {}
             self.timings[method.__name__] = end_time - start_time
             return result
         return wrapper
 
     @measure_time
-    def open_video(self):
-        """
-        Opens a video
-        Input : None
-        Output : True if the Video is correctly opened; False otherwise
-        """
-        self.capture = cv2.VideoCapture(self.video_path)
-        if not self.capture.isOpened():
-            print(mess.P_open, end='')
-            return False
-        return True
-
-    @measure_time
-    def get_video_info(self):
+    def initialize_video_properties(self):
         """
         Gets the FPS, Dimensions and Total Frames of a Video
         Input : None
         Output : None
         """
         self.fps = self.capture.get(cv2.CAP_PROP_FPS)
-        self.frame_dimensions = [int(self.capture.get(cv2.CAP_PROP_FRAME_WIDTH)), 
+        self.frame_dimensions = [int(self.capture.get(cv2.CAP_PROP_FRAME_WIDTH)),
                                  int(self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT))]
         self.total_frames = int(self.capture.get(cv2.CAP_PROP_FRAME_COUNT))
-        self.total_duration = self.total_frames / self.fps
-        return None
+        self.total_duration = self.total_frames / self.fps if self.fps > 0 else 0
+
 
     def read_frame(self):
         """
@@ -216,28 +210,28 @@ class VideoProcessor:
     def save_data(self, data, format_type):
         """
         Saves processed data into the specified format (CSV, dict, or list).
-        Inputs:
-        - data: The processed data to save.
-        - format_type: The format in which to save the data ('csv', 'dict', 'list').
+        Adjusts the file extension based on the format type.
         """
         T_saving_start = t.time()
         if format_type == 'csv':
-            if 'file' not in self.prev_data:  #
-                self.prev_data['file'] = open(f'{self.video_name}.txt', 'w', newline='')
+            self.data_path = f'{self.video_name}.csv'  # Set file path for CSV
+            if 'file' not in self.prev_data:
+                self.prev_data['file'] = open(self.data_path, 'w', newline='')
                 self.prev_data['writer'] = csv.writer(self.prev_data['file'])
                 self.prev_data['writer'].writerow(['Frame', 'Speed', 'Date', 'Time', 'Km marker'])
-            self.prev_data['writer'].writerow([self.frame_id, data['speed'],data['date'], data['time'], data['marker']])
+            self.prev_data['writer'].writerow([self.frame_id, data['speed'], data['date'], data['time'], data['marker']])
 
         elif format_type in ['dict', 'list']:
-            if 'file' not in self.prev_data: 
-                self.prev_data['file'] = open(f'{self.video_name}.txt', 'w')  
+            self.data_path = f'{self.video_name}.txt'  # Set file path for text
+            if 'file' not in self.prev_data:
+                self.prev_data['file'] = open(self.data_path, 'w')
             if format_type == 'dict':
                 self.prev_data['file'].write(str({self.frame_id: data}) + '\n')
             elif format_type == 'list':
-                self.prev_data['file'].write(str([data['speed'],data['date'], data['time'], data['marker']]) + '\n')
+                self.prev_data['file'].write(str([data['speed'], data['date'], data['time'], data['marker']]) + '\n')
         self.timings['saving'] += t.time() - T_saving_start
 
-    def get_filename_without_extension(path):
+    def get_filename_without_extension(self, path):
         base_name = os.path.basename(path)
         file_name_without_extension, _ = os.path.splitext(base_name)
         return file_name_without_extension
@@ -264,9 +258,6 @@ class VideoProcessor:
     """
         format_type = input("Choose output format (csv, dict, list): ")
         start_time = t.time()
-        if not self.open_video():
-            print(mess.P_gettype, end='')
-        self.get_video_info()
 
         while True:
             frame = self.read_frame()
@@ -332,4 +323,4 @@ class VideoProcessor:
             plt.ylabel('Change Detected (True/False)')
             plt.legend()
             plt.grid(True)  # Optionally add grid for better visibility
-            plt.show()
+            #plt.show()
