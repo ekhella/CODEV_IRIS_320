@@ -2,6 +2,7 @@ from Modules import os
 from VideoConstructor import VideoProcessor
 from VideoXMLHandler import VideoXMLHandler
 from VideoFrameDisplay import VideoFrameDisplay
+import traceback
 
 Video_Directory = 'Data_confidential/'
 
@@ -39,6 +40,9 @@ def display_video(video_path, data_path, video_name, user_time):
         video_display.release_resources()
     except Exception as e:
         print(f"Error displaying video {video_path}: {e}")
+        print(f"Error location: {e.offset}")
+        print(f"Error text: {e.text}")
+        traceback.print_exc()
 
 def main():
     xml_handler = VideoXMLHandler('Data_confidential/videoxml.xml')
