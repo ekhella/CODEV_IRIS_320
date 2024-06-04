@@ -40,7 +40,7 @@ class CircleLEDExtractor:
         self.cap.release()
 
 video_path = 'Data_confidential/video_vision_perif.mp4'
-frame_num = 10 
+frame_num = 60 
 
 extractor = CircleLEDExtractor(video_path)
 sub_img, frame = extractor.get_circular_subimage(frame_num)

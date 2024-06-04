@@ -17,8 +17,8 @@ class SegmentationSettings:
         self.led_bounds = (200, 225, 567, 578)
         self.thresholds = {'speed': 0.1, 'time': 0.05, 'marker': 0.1, 'date': 0.1}
         self.frame_decimation = 1
-        self.center = (218, 575)
-        self.radius = 6
+        self.center = (212, 570)
+        self.radius = 9
 
 class Settings:
     def __init__(self):
