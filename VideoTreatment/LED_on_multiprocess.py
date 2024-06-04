@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from Settings import Settings  
 class VideoAnalyzer:
     def __init__(self, video_path):
-        self.settings = Settings() 
+        self.settings = Settings()
         self.video_path = video_path
         self.cap = cv2.VideoCapture(video_path)
         if not self.cap.isOpened():
@@ -19,7 +19,7 @@ class VideoAnalyzer:
         self.start_time = None
 
     def is_led_on(self, frame):
-        roi = frame[self.settings.segmentation.h_led_s:self.settings.segmentation.h_led_e, self.settings.segmentation.w_led_s:self.settings.segmentation.w_led_e]
+        roi = frame[self.settings.segmentation.led_bounds[2]:self.settings.segmentation.led_bounds[3], self.settings.segmentation.led_bounds[0]:self.settings.segmentation.led_bounds[1]]
         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(hsv, self.hsv_thresholds[0], self.hsv_thresholds[1])
         mask = cv2.erode(mask, None, iterations=2)

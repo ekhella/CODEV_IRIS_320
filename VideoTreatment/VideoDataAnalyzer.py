@@ -1,18 +1,21 @@
-from Modules import plt, np, csv
+import csv
+import numpy as np
+import matplotlib.pyplot as plt
 
 class VideoDataAnalyzer:
     def __init__(self, file_path, video_path):
         self.file_path = file_path
-        self.file_path = file_path
+        self.video_path = video_path
         self.data = self.read_data_from_file()
         self.frames = list(self.data.keys())
-        self.markers_meters = [self.convert_marker_to_meters(self.data[frame]['marker']) for frame in self.frames]
-        self.time_seconds = [self.convert_time_to_seconds(self.data[frame]['time']) for frame in self.frames]
-        self.speeds = [float(self.data[frame]['speed']) for frame in self.frames]
+        # Ensure default values are properly set to avoid missing data issues
+        self.markers_meters = [self.convert_marker_to_meters(self.data[frame].get('marker', '0+0')) for frame in self.frames]
+        self.time_seconds = [self.convert_time_to_seconds(self.data[frame].get('time', '00:00:00')) for frame in self.frames]
+        self.speeds = [float(self.data[frame].get('speed', 0)) for frame in self.frames]
         self.slope, self.intercept = self.calculate_regression()
 
     def convert_time_to_seconds(self, time_str):
-        hours, minutes, seconds = map(int, time_str.split(':'))
+        hours, minutes, seconds = map(float, time_str.split(':'))
         return hours * 3600 + minutes * 60 + seconds
 
     def convert_marker_to_meters(self, marker_str):
@@ -23,27 +26,37 @@ class VideoDataAnalyzer:
         data = {}
         with open(self.file_path, mode='r', newline='') as file:
             csv_reader = csv.DictReader(file)
-            for index, row in enumerate(csv_reader):
-                data[index] = row
+            for row in csv_reader:
+                # Use the frame number as the key in the dictionary
+                frame_number = int(row['frame'])
+                data[frame_number] = row
         return data
 
     def calculate_regression(self):
-        """Create dictionaries with frame numbers as keys and time or marker meters as values
-        Only include frames where delta time is not zero to avoid division by zero in regression calculation"""
-        valid_frames = {index: self.time_seconds[i] for i, index in enumerate(self.frames[1:]) 
-                        if self.time_seconds[i] - self.time_seconds[i-1] != 0}
+        """Calculates a linear regression from the time data to estimate frame numbers."""
+        valid_frames = {index: self.time_seconds[index] for index in self.frames 
+                        if index > 0 and self.time_seconds[index] - self.time_seconds[index-1] != 0}
+
         if valid_frames:
-            coefficients = np.polyfit(list(valid_frames.keys()), list(valid_frames.values()), 1)
+            x = list(valid_frames.keys())
+            y = list(valid_frames.values())
+            coefficients = np.polyfit(x, y, 1)
             return coefficients[0], coefficients[1]  # slope, intercept
-        return 0, 0  # Default if no valid frames for regression
-    
+        else:
+            print("Insufficient data for a meaningful regression.")
+            return 0, 0  # Default if no valid data for regression
+
     def get_frame_number(self, time_input):
-        if self.slope != 0: 
-            frame_number = (time_input - self.intercept) / self.slope
-            return np.rint(frame_number).astype(int)
-        return None  
+        """Estimates frame number based on input time using the regression line."""
+        if self.slope != 0:
+            frame_number = (self.convert_time_to_seconds(time_input) - self.intercept) / self.slope
+            return int(np.rint(frame_number))
+        else:
+            print("Slope is zero, cannot calculate frame number.")
+            return None
 
     def plot_markers(self):
+        """Plots markers over frames."""
         plt.figure(figsize=(10, 6))
         plt.plot(self.frames, self.markers_meters, marker='.', linestyle='-', color='green')
         plt.xlabel('Frame Number')
@@ -53,6 +66,7 @@ class VideoDataAnalyzer:
         #plt.show()
 
     def plot_time_progression(self):
+        """Plots time progression over frames."""
         plt.figure(figsize=(10, 6))
         actual_time = [self.time_seconds[int(frame)] for frame in self.frames]
         predicted_time = [self.slope * float(frame) + self.intercept for frame in self.frames]
@@ -66,6 +80,7 @@ class VideoDataAnalyzer:
         #plt.show()
 
     def plot_speeds(self):
+        """Plots speed over frames."""
         plt.figure(figsize=(10, 6))
         plt.plot(self.frames, self.speeds, 'm-', marker='.')
         plt.xlabel('Frame Number')
@@ -73,3 +88,4 @@ class VideoDataAnalyzer:
         plt.title('Speed Over Frames')
         plt.grid(True)
         #plt.show()
+

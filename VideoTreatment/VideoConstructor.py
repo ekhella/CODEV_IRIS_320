@@ -223,7 +223,7 @@ class VideoProcessor:
             if 'file' not in self.prev_data:
                 self.prev_data['file'] = open(self.data_path, 'w', newline='')
                 self.prev_data['writer'] = csv.writer(self.prev_data['file'])
-                self.prev_data['writer'].writerow(['Frame', 'Speed', 'Date', 'Time', 'Km marker'])
+                self.prev_data['writer'].writerow(['frame', 'speed', 'date', 'time', 'marker'])
             self.prev_data['writer'].writerow([self.frame_id, data['speed'], data['date'], data['time'], data['marker']])
 
         elif format_type in ['dict', 'list']:
@@ -265,16 +265,18 @@ class VideoProcessor:
         start_time = t.time()
 
         for self.frame_id in range(self.total_frames):
-            frame = self.read_frame()
-            if frame is None:
-                break
             try:
+                frame = self.read_frame()
+                if frame is None:
+                    break
+
                 data = self.extract_data_from_frame(frame)
                 self.save_data(data, format_type)
+                self.progress_bar(start_time)
+
             except Exception as e:
                 print(f"Error processing frame {self.frame_id}: {e}")
                 continue  # Skip this frame and go to the next one
-            self.progress_bar(start_time)
 
         self.cleanup()
         #self.display_changes(self.change_log)
@@ -314,7 +316,7 @@ class VideoProcessor:
         ax1.axis('equal')  # Draw a circle
         plt.legend(labels, loc="best")
         plt.title('Execution Time Breakdown')
-        plt.show()
+        #plt.show()
     
     def display_changes (self, results):
         """
