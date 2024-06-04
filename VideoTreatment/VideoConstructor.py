@@ -173,25 +173,24 @@ class VideoProcessor:
             'time': (frame[:seg.height_time, seg.width_time[0]:seg.width_time[1]], pyt.time, seg.thresholds['time']),
             'date': (frame[:seg.height_date, seg.width_date[0]:seg.width_date[1]], pyt.date, seg.thresholds['date'])
         }
-        self.prev_values = {}
     
         for key, (zone, config, threshold) in zones.items():
             start_extraction = t.time()
-            prev_zone = self.prev_data.get(key, (None, None))[0]
+            prev_zone, prev_text = self.prev_data.get(key, (None, None))
             change_detected = self.detect_change(zone, prev_zone, threshold)[1]
             self.change_log[key].append(change_detected)
             self.diff_log[key].append(self.detect_change(zone, prev_zone, threshold)[0])
+
             if prev_zone is None or change_detected:
                 text = self.get_text(zone, config=config)
                 if key=='marker':
                     text=self.rewrite_marker_format(text)
                 self.prev_data[key] = (zone, text)
-            else:
-                text = self.prev_data[key][1]
-            if not text:
-                text=self.prev_value.get(key)
-            else:
-                self.prev_values.get(key)
+            else :
+                text = prev_text
+            if text == "":
+                text = prev_text if prev_text is not None else ""  # Use previous text if the new text is empty
+
             data[key] = text
             self.timings['extraction_' + key] += t.time() - start_extraction
 
@@ -263,6 +262,7 @@ class VideoProcessor:
     """
         format_type = input("Choose output format (csv, dict, list): ")
         start_time = t.time()
+        self.invalid_index = []
 
         for self.frame_id in range(self.total_frames):
             try:
@@ -275,10 +275,11 @@ class VideoProcessor:
                 self.progress_bar(start_time)
 
             except Exception as e:
-                print(f"Error processing frame {self.frame_id}: {e}")
-                continue  # Skip this frame and go to the next one
+                self.invalid_index.append(self.frame_id)
+                continue
 
         self.cleanup()
+        print(f"\n Error processing frames {self.invalid_index}")
         #self.display_changes(self.change_log)
         #self.display_changes(self.diff_log)
         self.display_results(format_type)

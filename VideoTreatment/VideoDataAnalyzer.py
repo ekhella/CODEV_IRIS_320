@@ -34,8 +34,8 @@ class VideoDataAnalyzer:
 
     def calculate_regression(self):
         """Calculates a linear regression from the time data to estimate frame numbers."""
-        valid_frames = {index: self.time_seconds[index] for index in self.frames 
-                        if index > 0 and self.time_seconds[index] - self.time_seconds[index-1] != 0}
+        valid_frames = {index: self.time_seconds[index] for index in self.frames
+                if index > 1 and index-1< len(self.time_seconds) and self.time_seconds[index] - self.time_seconds[index-1] != 0}
 
         if valid_frames:
             x = list(valid_frames.keys())
