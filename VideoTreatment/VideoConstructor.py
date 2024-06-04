@@ -263,6 +263,7 @@ class VideoProcessor:
         format_type = input("Choose output format (csv, dict, list): ")
         start_time = t.time()
         self.invalid_index = []
+        previous_data = None  # Initialize previous data storage
 
         for self.frame_id in range(self.total_frames):
             try:
@@ -271,11 +272,17 @@ class VideoProcessor:
                     break
 
                 data = self.extract_data_from_frame(frame)
+                previous_data = data
                 self.save_data(data, format_type)
                 self.progress_bar(start_time)
 
-            except Exception as e:
+            except Exception as BandeauDisparu:
                 self.invalid_index.append(self.frame_id)
+                if previous_data is not None:
+                    # Reuse previous data but update the frame number
+                    previous_data['frame'] = self.frame_id
+                    self.save_data(previous_data, format_type)
+                    self.progress_bar(start_time)
                 continue
 
         self.cleanup()
