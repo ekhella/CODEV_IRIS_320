@@ -1,10 +1,9 @@
-from Modules import plt
-from Modules import np
+from Modules import plt, np, csv
 
 class VideoDataAnalyzer:
     def __init__(self, file_path, video_path):
         self.file_path = file_path
-        self.video_path = video_path
+        self.file_path = file_path
         self.data = self.read_data_from_file()
         self.frames = list(self.data.keys())
         self.markers_meters = [self.convert_marker_to_meters(self.data[frame]['marker']) for frame in self.frames]
@@ -22,11 +21,10 @@ class VideoDataAnalyzer:
 
     def read_data_from_file(self):
         data = {}
-        with open(self.file_path, 'r') as file:
-            for line in file:
-                frame_data = eval(line)
-                frame_num = list(frame_data.keys())[0]
-                data[frame_num] = frame_data[frame_num]
+        with open(self.file_path, mode='r', newline='') as file:
+            csv_reader = csv.DictReader(file)
+            for index, row in enumerate(csv_reader):
+                data[index] = row
         return data
 
     def calculate_regression(self):

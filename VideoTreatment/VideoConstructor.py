@@ -173,6 +173,7 @@ class VideoProcessor:
             'time': (frame[:seg.height_time, seg.width_time[0]:seg.width_time[1]], pyt.time, seg.thresholds['time']),
             'date': (frame[:seg.height_date, seg.width_date[0]:seg.width_date[1]], pyt.date, seg.thresholds['date'])
         }
+        self.prev_values = {}
     
         for key, (zone, config, threshold) in zones.items():
             start_extraction = t.time()
@@ -187,6 +188,10 @@ class VideoProcessor:
                 self.prev_data[key] = (zone, text)
             else:
                 text = self.prev_data[key][1]
+            if not text:
+                text=self.prev_value.get(key)
+            else:
+                self.prev_values.get(key)
             data[key] = text
             self.timings['extraction_' + key] += t.time() - start_extraction
 

@@ -10,6 +10,7 @@ def get_user_date():
     return input("Input your date at this format: DD/MM/YY HH:MM:SS OR DD/MM/YY HH:MM:SS.XXX \nEx: 23/10/18 16:01:32.234\n")
 
 def process_videos(videos, user_date):
+    video_already_analysed = []
     if not videos:
         print("No video files found for the given date. Insert videos in your directory, or check the date format.")
         return
@@ -18,7 +19,9 @@ def process_videos(videos, user_date):
     for video in videos:
         print(video)
         video_path = os.path.join(Video_Directory, video)
-        process_video(video_path, user_date)
+        if video not in video_already_analysed:
+            video_already_analysed.append(video)
+            process_video(video_path, user_date)
 
 def process_video(video_path, user_time):
     try:
@@ -32,6 +35,9 @@ def process_video(video_path, user_time):
         display_video(video_path, video_processor.data_path, video_name, user_time)
     except Exception as e:
         print(f"Error processing video {video_path}: {e}")
+        print(f"Error location: {e.offset}")
+        print(f"Error text: {e.text}")
+        traceback.print_exc()
 
 def display_video(video_path, data_path, video_name, user_time):
     try:
