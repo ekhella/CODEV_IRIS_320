@@ -4,11 +4,15 @@ import matplotlib.pyplot as plt
 import time
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
-from VideoTreatment.Settings import Settings
+from Settings import Settings
 #from segmentation_settings import radius, center
 #from segmentation_settings import w_led_s, w_led_e, h_led_s, h_led_e
 
 def is_led_on(frame, hsv_thresholds):
+    h_led_s=567
+    h_led_e=578
+    w_led_s=200
+    w_led_e=225
     roi = frame[h_led_s:h_led_e, w_led_s:w_led_e]
     hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, hsv_thresholds[0], hsv_thresholds[1])
@@ -36,6 +40,8 @@ load_time = end_load_time - start_load_time
 print(f"Video loading time: {load_time:.2f} seconds")
 
 # Start time measurement for mask computation
+center = (212, 570)
+radius = 9
 start_mask_time = time.time()
 Y, X = np.ogrid[:h, :w]
 r_squared = (X - center[0]) ** 2 + (Y - center[1]) ** 2
@@ -150,4 +156,3 @@ print(f"Total execution time (excluding plotting): {total_execution_time:.2f} se
 video_duration = total_frames / fps
 execution_percentage = (total_execution_time / video_duration) * 100
 print(f"Execution time as percentage of video duration: {execution_percentage:.2f}%")
-

@@ -25,6 +25,17 @@ class VideoAnalyzer:
         mask = cv2.erode(mask, None, iterations=2)
         mask = cv2.dilate(mask, None, iterations=2)
         return cv2.countNonZero(mask) > 0
+    
+    def stairs_with_red_value(self):
+        threshold_stairs = 150 #empirical value
+        new_status_led = []
+
+        for mean_color_red in [triplet[2] for triplet in mean_colors]: # 2 because we are only interested in the mean value of the red component
+            if mean_color_red < threshold_stairs:
+                new_status_led.append(0)
+            else:
+                new_status_led.append(1)
+        return new_status_led
 
     def process_frame(self, frame_info):
         frame_id, frame = frame_info
@@ -43,8 +54,8 @@ class VideoAnalyzer:
     def process_video(self):
         self.start_time = time.time()
         self.generate_mask()
-        mean_colors = []
-        led_status = []
+        self.mean_colors = []
+        self.led_status = []
 
         with ThreadPoolExecutor() as executor:
             frame_id = 0
@@ -54,8 +65,8 @@ class VideoAnalyzer:
                     break
                 if frame_id % self.frame_interval == 0:
                     future = executor.submit(self.process_frame, (frame_id, frame))
-                    led_status.append(future.result()[1])
-                    mean_colors.append(future.result()[2])
+                    self.led_status.append(future.result()[1])
+                    self.mean_colors.append(future.result()[2])
                 frame_id += 1
 
         self.total_execution_time = time.time() - self.start_time
@@ -63,7 +74,8 @@ class VideoAnalyzer:
         execution_percentage = (self.total_execution_time / video_duration) * 100
         print(f"Total execution time: {self.total_execution_time:.2f} seconds")
         print(f"Execution time as percentage of video duration: {execution_percentage:.2f}%")
-        return np.array(mean_colors), np.array(led_status)
+        #print(mean_colors)
+        return np.array(self.mean_colors), np.array(self.led_status)
 
     def plot_results(self, mean_colors, led_status):
         time_seconds = np.arange(len(led_status)) * self.frame_interval / self.fps
@@ -80,6 +92,12 @@ class VideoAnalyzer:
         plt.tight_layout()
         plt.show()
 
+    def plot_stairs(self, new_status_led):
+        time_seconds = np.arange(len(new_status_led)) * self.frame_interval / self.fps
+
+        plt.plot(time_seconds, new_status_led, '-o')
+        plt.show()
+
     def release_resources(self):
         self.cap.release()
 
@@ -87,4 +105,6 @@ video_path = 'Data_confidential/video_vision_perif.mp4'
 analyzer = VideoAnalyzer(video_path)
 mean_colors, led_status = analyzer.process_video()
 analyzer.plot_results(mean_colors, led_status)
+new_status_led = analyzer.stairs_with_red_value()
+analyzer.plot_stairs(new_status_led)
 analyzer.release_resources()

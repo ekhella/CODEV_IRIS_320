@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 #from segmentation_settings import w_led_s, w_led_e, h_led_s, h_led_e
 
 def is_led_on(frame, hsv_thresholds):
-    roi = frame[h_led_s:h_led_e, w_led_s:w_led_e] # Region of Interest (HOI)
+    roi = frame[567:578, 200:225] # Region of Interest (HOI)
     hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)  # Convert ROI to Hue Saturation Value(HSV) color space
     mask = cv2.inRange(hsv, hsv_thresholds[0], hsv_thresholds[1])  # Apply HSV threshold
     # Cleaning
@@ -27,11 +27,11 @@ if not cap.isOpened():
     print("Error opening video file")
 else:
     frame_id = 0
-    fps = cap.get(cv2.CAP_PROP_FPS) 
+    fps = cap.get(cv2.CAP_PROP_FPS)
     while True:
         ret, frame = cap.read()
         if not ret:
-            break 
+            break
 
         # Check if the LED is on for this frame and append the result to the list
         led_on = any(is_led_on(frame, threshold) for threshold in hsv_thresholds)
@@ -66,9 +66,9 @@ time_seconds_offset = [t - time_seconds[offset] for t in time_seconds[offset:-1]
 time_regr = [time_seconds_offset[i] for i in[point[0] for point in regr]] # Taking the points of interest in the linear regression
 
 x = time_regr
-y = [point[1] for point in regr] 
+y = [point[1] for point in regr]
 
-coefficients = np.polyfit(x, y, 1) 
+coefficients = np.polyfit(x, y, 1)
 
 slope = coefficients[0]
 intercept = coefficients[1]
@@ -120,9 +120,9 @@ frame_id=0
 while True:
     ret, frame = cap.read()
     if not ret:
-        break 
+        break
 
-    led_zone = frame[h_led_s:h_led_e, w_led_s:w_led_e]
+    led_zone = frame[567:578, 200:225]
     new_size = np.shape(led_zone)[0]*np.shape(led_zone)[1] #New size is just the total number of pixels of the wanted zone
     led_zone_list = np.reshape(led_zone,(new_size,3)) #We have now the wanted zone, it's a list of pixels (a pixel is a list of 3 int)
     mean_blue = np.mean(led_zone_list[:,0])
@@ -134,10 +134,10 @@ while True:
 
     frame_id += 1
 
-cap.release() 
+cap.release()
 
 
-# Plotting 
+# Plotting
 fig, axes = plt.subplots(3, 1, figsize=(10, 18))  # Three rows, one column
 
 # Plot Red values
