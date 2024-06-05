@@ -1,8 +1,8 @@
-import cv2
-import numpy as np
-import matplotlib.pyplot as plt
+
 from LED_on_multiprocess import led_status
 from math import *
+from Modules import gp, np, plt, cv2, os
+from VideoDirectoryTool import PathManager
 
 class LEDVideoAnalysis:
     def __init__(self, video_path, led_status):
@@ -95,12 +95,38 @@ class LEDVideoAnalysis:
         plt.legend(loc="best")
         plt.show()
 
+    def display_frame(self,Twanted):
+        cap = cv2.VideoCapture(self.video_path)
+        if not cap.isOpened():
+            raise ValueError("Erreur lors de l'ouverture de la vidéo")
+        
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        if fps == 0:
+            raise ValueError("Impossible d'obtenir les FPS de la vidéo")
+        
+        Twanted_sec = self.convert_to_seconds(Twanted)
+        frame_number = round(self.convert_video_time_to_led_time_withoutbeginning(Twanted_sec) * fps)
+        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
+        
+        ret, frame = cap.read()
+        if not ret:
+            print(f"Erreur : Impossible de lire la frame numéro {frame_number}")
+            cap.release()
+
+        self.path_manager = PathManager(user=gp.getuser())
+        self.frame_dir = self.path_manager.get_or_create_dir('SavedFrames')
+        frame_path = os.path.join(self.frame_dir, f"frame_at_{Twanted}s_LED_POV.png")
+        cv2.imwrite(frame_path, frame)
+        plt.imshow(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        plt.title(f'Numéro de la frame: {frame_number}')
+        plt.axis('off')
+        plt.show()
+
+        cap.release()
+        return frame
+
     def run_analysis(self):
         self.calculate_offsets()
         self.calculate_time_seconds()
         self.perform_regression()
         self.plot_interpolation()
-
-# Example usage:
-analysis = LEDVideoAnalysis('Data_confidential/video_vision_perif.mp4', led_status)
-analysis.run_analysis()

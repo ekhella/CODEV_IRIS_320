@@ -2,6 +2,8 @@ from Modules import os
 from VideoConstructor import VideoProcessor
 from VideoXMLHandler import VideoXMLHandler
 from VideoFrameDisplay import VideoFrameDisplay
+from Interpolation import LEDVideoAnalysis
+from LED_on_multiprocess import led_status
 import traceback
 
 Video_Directory = 'Data_confidential/'
@@ -81,10 +83,13 @@ def display_video(video_path, data_path, video_name, user_time):
 
 def main():
     xml_handler = VideoXMLHandler('Data_confidential/videoxml.xml')
+    ledanalysis=  LEDVideoAnalysis('Data_confidential/video_vision_perif.mp4', led_status)
     user_date = get_user_date()
     try:
         videos = xml_handler.time_to_video(user_date)
         process_videos(videos, user_date)
+        ledanalysis.run_analysis()
+        ledanalysis.display_frame(user_date.split(' ')[1])
     except Exception as e:
         print(f"Error finding videos for the date {user_date}: {e}")
         traceback.print_exc()
