@@ -23,7 +23,7 @@ def get_data_path(video_name):
 
 def list_videos(directory):
     """List all video files in the given directory."""
-    return [file for file in os.listdir(directory) if file.endswith('.avi')]  # assuming the videos are .avi files
+    return [file for file in os.listdir(directory) if file.endswith('.avi')]  # Assuming the videos are .avi files
 
 def process_video(video_path):
     """Process a single video."""
@@ -65,7 +65,7 @@ def process_videos(directory):
                 process_video(video_path)
             else:
                 print(f"Skipping analysis of {video}.")
-                continue  # Skip to the next video
+                continue 
 
 def display_video():
     """Display a specific frame from the video."""
@@ -73,8 +73,8 @@ def display_video():
     user_date = get_user_date()
     videos = xml_handler.time_to_video(user_date)
     for video in videos:
-        video_path = os.path.join(VIDEO_DIRECTORY, video)
         user_time = user_date.split(' ')[1]
+        video_path = os.path.join(VIDEO_DIRECTORY, video)
         base_name = os.path.basename(video_path)
         file_name_without_extension, _ = os.path.splitext(base_name)
         video_name = file_name_without_extension
