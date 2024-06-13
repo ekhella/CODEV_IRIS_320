@@ -2,8 +2,8 @@ from Modules import os
 from VideoConstructor import VideoProcessor
 from VideoXMLHandler import VideoXMLHandler
 from VideoFrameDisplay import VideoFrameDisplay
-from Interpolation import LEDVideoAnalysis
-from LED_on_multiprocess import led_status
+#from Interpolation import LEDVideoAnalysis
+#from LED_on_multiprocess import led_status
 import traceback
 
 Video_Directory = 'Data_confidential/'
