@@ -1,6 +1,7 @@
 from Modules import sys, cv2, np, csv, pytesseract, t, plt, os
 from Base import mess
 from Settings import Settings
+from VideoDataAnalyzer import VideoDataAnalyzer
 
 
 class VideoProcessor:
@@ -239,6 +240,12 @@ class VideoProcessor:
         base_name = os.path.basename(path)
         file_name_without_extension, _ = os.path.splitext(base_name)
         return file_name_without_extension
+    
+    def save_interpolated_times(self):
+        analyzer = VideoDataAnalyzer(self.data_path, self.video_path)
+        output_file_path = f'{self.video_name}_with_interpolated_times.csv'
+        analyzer.save_data_with_interpolated_times(output_file_path)
+        print(f"Interpolated times saved to {output_file_path}")
 
     def process_video(self):
         """

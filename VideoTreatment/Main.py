@@ -31,6 +31,7 @@ def process_video(video_path):
         video_processor = VideoProcessor(video_path)
         print(f"Processing Video: {os.path.basename(video_path)}")
         video_processor.process_video()
+        video_processor.save_interpolated_times()
     except Exception as e:
         print(f"Error processing video {video_path}: {e}")
         traceback.print_exc()
@@ -57,7 +58,7 @@ def process_videos(directory):
     for video in videos:
         video_path = os.path.join(directory, video)
         if video not in analyzed_videos:
-            process_video(video_path)
+            (video_path)
             update_analyzed_videos(video)
         else:
             response = input(f"{video} has already been analyzed. Do you want to analyze it again? [Y/N] ").strip().lower()

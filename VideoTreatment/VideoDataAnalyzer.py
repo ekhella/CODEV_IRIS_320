@@ -13,10 +13,17 @@ class VideoDataAnalyzer:
         self.time_seconds = [self.convert_time_to_seconds(self.data[frame].get('time', '00:00:00')) for frame in self.frames]
         self.speeds = [float(self.data[frame].get('speed', 0)) for frame in self.frames]
         self.slope, self.intercept = self.calculate_regression()
+        self.interpolated_times = self.calculate_interpolated_times()
 
     def convert_time_to_seconds(self, time_str):
         hours, minutes, seconds = map(float, time_str.split(':'))
         return hours * 3600 + minutes * 60 + seconds
+    
+    def convert_seconds_to_time(self, seconds):
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        seconds = seconds % 60
+        return f"{hours:02}:{minutes:02}:{seconds:06.3f}"
 
     def convert_marker_to_meters(self, marker_str):
         km, meters = marker_str.split('+')
@@ -45,6 +52,14 @@ class VideoDataAnalyzer:
         else:
             print("Insufficient data for a meaningful regression.")
             return 0, 0  # Default if no valid data for regression
+    
+    def calculate_interpolated_times(self):
+        """Calculates interpolated times for all frames."""
+        interpolated_times = {}
+        for frame in self.frames:
+            interpolated_time_seconds = self.slope * frame + self.intercept
+            interpolated_times[frame] = self.convert_seconds_to_time(interpolated_time_seconds)
+        return interpolated_times
 
     def get_frame_number(self, time_input):
         """Estimates frame number based on input time using the regression line."""
@@ -54,6 +69,21 @@ class VideoDataAnalyzer:
         else:
             print("Slope is zero, cannot calculate frame number.")
             return None
+        
+    def add_interpolated_times_to_data(self):
+        """Adds the interpolated times to the data."""
+        for frame in self.frames:
+            self.data[frame]['Interpolated Time'] = self.interpolated_times[frame]
+
+    def save_data_with_interpolated_times(self, output_file_path):
+        """Saves the data with interpolated times to a new CSV file."""
+        self.add_interpolated_times_to_data()
+        fieldnames = list(self.data[self.frames[0]].keys())
+        with open(output_file_path, mode='w', newline='') as file:
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
+            writer.writeheader()
+            for frame in self.frames:
+                writer.writerow(self.data[frame])
 
     def plot_markers(self):
         """Plots markers over frames."""
